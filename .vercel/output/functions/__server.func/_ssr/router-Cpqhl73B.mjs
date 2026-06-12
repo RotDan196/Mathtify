@@ -6,8 +6,6 @@ import "../_libs/mathlive.mjs";
 import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { f as ffmpegPath } from "../_libs/ffmpeg-static.mjs";
-import { y as youtubedl } from "../_libs/youtube-dl-exec.mjs";
 import "../_libs/tanstack__router-core.mjs";
 import "../_libs/tanstack__history.mjs";
 import "../_libs/cookie-es.mjs";
@@ -21,13 +19,6 @@ import "crypto";
 import "async_hooks";
 import "stream";
 import "../_libs/isbot.mjs";
-import "os";
-import "path";
-import "../_libs/dargs.mjs";
-import "../_libs/tinyspawn.mjs";
-import "child_process";
-import "events";
-import "../_libs/is-unix.mjs";
 const appCss = "/assets/styles-DC66JRNv.css";
 function reportLovableError(error, context = {}) {
   if (typeof window === "undefined") return;
@@ -254,6 +245,19 @@ const AUDIO_MIME_TYPES = {
   opus: "audio/ogg;codecs=opus",
   wav: "audio/wav"
 };
+async function getYoutubeDl() {
+  const module = await import("youtube-dl-exec");
+  return module.default;
+}
+async function getFfmpegPath() {
+  try {
+    const module = await import("ffmpeg-static");
+    const ffmpegPath = module.default;
+    return typeof ffmpegPath === "string" && ffmpegPath ? ffmpegPath : void 0;
+  } catch {
+    return void 0;
+  }
+}
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -296,6 +300,7 @@ function normalizeAudioQuality(quality) {
   return AUDIO_QUALITY_OPTIONS.includes(value) ? value : "192";
 }
 async function getYouTubeUrl(inputUrl, quality = "720") {
+  const youtubedl = await getYoutubeDl();
   const format = `best[height<=${quality}][ext=mp4]/best[height<=${quality}]/best[ext=mp4]/best`;
   return await youtubedl(
     inputUrl,
@@ -315,27 +320,24 @@ async function extractYouTubeAudio({
   audioFormat,
   audioQuality
 }) {
-  if (!ffmpegPath) {
-    throw new Error("ffmpeg_not_available");
-  }
   const dir = await mkdtemp(join(tmpdir(), "mathtify-youtube-"));
   const output = join(dir, `${videoId}.%(ext)s`);
   try {
-    await youtubedl(
-      inputUrl,
-      {
-        noPlaylist: true,
-        noWarnings: true,
-        extractAudio: true,
-        audioFormat,
-        audioQuality: `${audioQuality}K`,
-        format: "bestaudio/best",
-        output,
-        ffmpegLocation: ffmpegPath,
-        addHeader: ["referer:youtube.com", "user-agent:Mozilla/5.0"]
-      },
-      { timeout: 24e4 }
-    );
+    const youtubedl = await getYoutubeDl();
+    const ffmpegPath = await getFfmpegPath();
+    if (!ffmpegPath) throw new Error("ffmpeg_static_not_available");
+    const ytdlpOptions = {
+      noPlaylist: true,
+      noWarnings: true,
+      extractAudio: true,
+      audioFormat,
+      audioQuality: Number(audioQuality),
+      format: "bestaudio/best",
+      output,
+      ffmpegLocation: ffmpegPath,
+      addHeader: ["referer:youtube.com", "user-agent:Mozilla/5.0"]
+    };
+    await youtubedl(inputUrl, ytdlpOptions, { timeout: 24e4 });
     const files = await readdir(dir);
     const fileName = files.find((file) => file.startsWith(videoId));
     if (!fileName) throw new Error("audio_file_not_created");

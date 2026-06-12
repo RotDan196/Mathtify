@@ -1,5 +1,5 @@
 import { j as jsxRuntimeExports, r as reactExports } from "../_libs/react.mjs";
-import { d, E } from "../_libs/wavesurfer.js.mjs";
+import { d, w } from "../_libs/wavesurfer.js.mjs";
 import { M as ModuleShell } from "./ModuleShell-DRa0J7Mt.mjs";
 import { F as FileHeadphone, g as CloudUpload, a as CircleAlert, h as Pause, i as Play, j as Square, k as Activity, l as Scissors, V as Volume2, m as SlidersHorizontal, D as Download, G as Gauge } from "../_libs/lucide-react.mjs";
 import "../_libs/tanstack__react-router.mjs";
@@ -516,7 +516,7 @@ function AudioTools() {
     if (!waveformContainerRef.current || !audioUrl) return void 0;
     trimRegionRef.current = null;
     const regions = d.create();
-    const waveSurfer = E.create({
+    const waveSurfer = w.create({
       container: waveformContainerRef.current,
       height: 154,
       dragToSeek: true,

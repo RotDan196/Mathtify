@@ -93,35 +93,48 @@ function s$1(t2, e3, i2) {
   const s2 = n$1(t2, e3 || {});
   return null == i2 || i2.appendChild(s2), s2;
 }
-var r$1 = Object.freeze({ __proto__: null, createElement: s$1, default: s$1 });
-const o$1 = { fetchBlob: function(e3, i2, n2) {
+function r$1(t2) {
+  return t2 instanceof HTMLElement || "object" == typeof t2 && null !== t2 && t2.nodeType === Node.ELEMENT_NODE && "object" == typeof t2.style;
+}
+var o$1 = Object.freeze({ __proto__: null, createElement: s$1, default: s$1, isHTMLElement: r$1 });
+const a$1 = { fetchBlob: function(e3, i2, n2) {
   return t$1(this, void 0, void 0, (function* () {
-    const s2 = yield fetch(e3, n2);
-    if (s2.status >= 400) throw new Error(`Failed to fetch ${e3}: ${s2.status} (${s2.statusText})`);
-    return (function(e4, i3) {
+    var s2;
+    const r2 = yield fetch(e3, n2);
+    if (r2.status >= 400) throw new Error(`Failed to fetch ${e3}: ${r2.status} (${r2.statusText})`);
+    return (function(e4, i3, n3) {
       t$1(this, void 0, void 0, (function* () {
+        var t2;
         if (!e4.body || !e4.headers) return;
-        const t2 = e4.body.getReader(), n3 = Number(e4.headers.get("Content-Length")) || 0;
-        let s3 = 0;
-        const r2 = (t3) => {
-          s3 += (null == t3 ? void 0 : t3.length) || 0;
-          const e5 = Math.round(s3 / n3 * 100);
-          i3(e5);
+        const s3 = e4.body.getReader(), r3 = Number(e4.headers.get("Content-Length")) || 0;
+        let o2 = 0;
+        const a2 = () => {
+          s3.cancel();
         };
+        if (n3) {
+          if (n3.aborted) return void s3.cancel();
+          n3.addEventListener("abort", a2, { once: true });
+        }
         try {
           for (; ; ) {
-            const e5 = yield t2.read();
+            const e5 = yield s3.read();
             if (e5.done) break;
-            r2(e5.value);
+            if (o2 += (null === (t2 = e5.value) || void 0 === t2 ? void 0 : t2.length) || 0, r3 > 0) {
+              const t3 = Math.round(o2 / r3 * 100);
+              i3(t3);
+            }
           }
         } catch (t3) {
+          if (t3 instanceof DOMException && "AbortError" === t3.name) return;
           console.warn("Progress tracking error:", t3);
+        } finally {
+          n3 && n3.removeEventListener("abort", a2);
         }
       }));
-    })(s2.clone(), i2), s2.blob();
+    })(r2.clone(), i2, null !== (s2 = null == n2 ? void 0 : n2.signal) && void 0 !== s2 ? s2 : void 0), r2.blob();
   }));
 } };
-function a$1(t2) {
+function l$1(t2) {
   let e3 = t2;
   const i2 = /* @__PURE__ */ new Set();
   return { get value() {
@@ -132,8 +145,8 @@ function a$1(t2) {
     this.set(t3(e3));
   }, subscribe: (t3) => (i2.add(t3), () => i2.delete(t3)) };
 }
-function l$1(t2, e3) {
-  const i2 = a$1(t2());
+function h$1(t2, e3) {
+  const i2 = l$1(t2());
   return e3.forEach(((e4) => e4.subscribe((() => {
     const e5 = t2();
     Object.is(i2.value, e5) || i2.set(e5);
@@ -141,7 +154,7 @@ function l$1(t2, e3) {
     return i2.value;
   }, subscribe: (t3) => i2.subscribe(t3) };
 }
-function h$1(t2, e3) {
+function c(t2, e3) {
   let i2;
   const n2 = () => {
     i2 && (i2(), i2 = void 0), i2 = t2();
@@ -150,7 +163,7 @@ function h$1(t2, e3) {
     i2 && (i2(), i2 = void 0), s2.forEach(((t3) => t3()));
   };
 }
-class c extends e$1 {
+class u extends e$1 {
   get isPlayingSignal() {
     return this._isPlaying;
   }
@@ -173,7 +186,7 @@ class c extends e$1 {
     return this._seeking;
   }
   constructor(t2) {
-    super(), this.isExternalMedia = false, this.reactiveMediaEventCleanups = [], t2.media ? (this.media = t2.media, this.isExternalMedia = true) : this.media = document.createElement("audio"), this._isPlaying = a$1(false), this._currentTime = a$1(0), this._duration = a$1(0), this._volume = a$1(this.media.volume), this._muted = a$1(this.media.muted), this._playbackRate = a$1(this.media.playbackRate || 1), this._seeking = a$1(false), this.setupReactiveMediaEvents(), t2.mediaControls && (this.media.controls = true), t2.autoplay && (this.media.autoplay = true), null != t2.playbackRate && this.onMediaEvent("canplay", (() => {
+    super(), this.isExternalMedia = false, this._ownBlobUrl = null, this.reactiveMediaEventCleanups = [], t2.media ? (this.media = t2.media, this.isExternalMedia = true) : this.media = document.createElement("audio"), this._isPlaying = l$1(false), this._currentTime = l$1(0), this._duration = l$1(0), this._volume = l$1(this.media.volume), this._muted = l$1(this.media.muted), this._playbackRate = l$1(this.media.playbackRate || 1), this._seeking = l$1(false), this.setupReactiveMediaEvents(), t2.mediaControls && (this.media.controls = true), t2.autoplay && (this.media.autoplay = true), null != t2.playbackRate && this.onMediaEvent("canplay", (() => {
       null != t2.playbackRate && (this.media.playbackRate = t2.playbackRate);
     }), { once: true });
   }
@@ -207,8 +220,7 @@ class c extends e$1 {
     return this.media.currentSrc || this.media.src || "";
   }
   revokeSrc() {
-    const t2 = this.getSrc();
-    t2.startsWith("blob:") && URL.revokeObjectURL(t2);
+    this._ownBlobUrl && (URL.revokeObjectURL(this._ownBlobUrl), this._ownBlobUrl = null);
   }
   canPlayType(t2) {
     return "" !== this.media.canPlayType(t2);
@@ -218,14 +230,14 @@ class c extends e$1 {
     if (t2 && i2 === t2) return;
     this.revokeSrc();
     const n2 = e3 instanceof Blob && (this.canPlayType(e3.type) || !t2) ? URL.createObjectURL(e3) : t2;
-    if (i2 && this.media.removeAttribute("src"), n2 || t2) try {
+    if (n2 !== t2 && (this._ownBlobUrl = n2), i2 && this.media.removeAttribute("src"), n2 || t2) try {
       this.media.src = n2;
     } catch (e4) {
       this.media.src = t2;
     }
   }
   destroy() {
-    this.reactiveMediaEventCleanups.forEach(((t2) => t2())), this.reactiveMediaEventCleanups = [], this.isExternalMedia || (this.media.pause(), this.revokeSrc(), this.media.removeAttribute("src"), this.media.load(), this.media.remove());
+    this.reactiveMediaEventCleanups.forEach(((t2) => t2())), this.reactiveMediaEventCleanups = [], this.revokeSrc(), this.unAll(), this.isExternalMedia || (this.media.pause(), this.media.removeAttribute("src"), this.media.load(), this.media.remove());
   }
   setMediaElement(t2) {
     this.reactiveMediaEventCleanups.forEach(((t3) => t3())), this.reactiveMediaEventCleanups = [], this.media = t2, this.setupReactiveMediaEvents();
@@ -283,23 +295,23 @@ class c extends e$1 {
     return this.media.setSinkId(t2);
   }
 }
-function u({ maxTop: t2, maxBottom: e3, halfHeight: i2, vScale: n2, barMinHeight: s2 = 0, barAlign: r2 }) {
+function d$1({ maxTop: t2, maxBottom: e3, halfHeight: i2, vScale: n2, barMinHeight: s2 = 0, barAlign: r2 }) {
   let o2 = Math.round(t2 * i2 * n2);
   let a2 = o2 + Math.round(e3 * i2 * n2) || 1;
   return a2 < s2 && (a2 = s2, r2 || (o2 = a2 / 2)), { topHeight: o2, totalHeight: a2 };
 }
-function d$1({ barAlign: t2, halfHeight: e3, topHeight: i2, totalHeight: n2, canvasHeight: s2 }) {
+function p({ barAlign: t2, halfHeight: e3, topHeight: i2, totalHeight: n2, canvasHeight: s2 }) {
   return "top" === t2 ? 0 : "bottom" === t2 ? s2 - n2 : e3 - i2;
 }
-function p(t2, e3, i2) {
+function m(t2, e3, i2) {
   const n2 = e3 - t2.left, s2 = i2 - t2.top;
   return [n2 / t2.width, s2 / t2.height];
 }
-function m(t2) {
+function g(t2) {
   return Boolean(t2.barWidth || t2.barGap || t2.barAlign);
 }
-function g(t2, e3) {
-  if (!m(e3)) return t2;
+function f(t2, e3) {
+  if (!g(e3)) return t2;
   const i2 = e3.barWidth || 0.5, n2 = i2 + (e3.barGap || i2 / 2);
   return 0 === n2 ? t2 : Math.floor(t2 / n2) * n2;
 }
@@ -308,29 +320,35 @@ function v({ scrollLeft: t2, totalWidth: e3, numCanvases: i2 }) {
   const n2 = t2 / e3, s2 = Math.floor(n2 * i2);
   return [s2 - 1, s2, s2 + 1];
 }
-function f(t2) {
+function b(t2) {
   const e3 = t2._cleanup;
   "function" == typeof e3 && e3();
 }
-function b(t2) {
-  const e3 = a$1({ scrollLeft: t2.scrollLeft, scrollWidth: t2.scrollWidth, clientWidth: t2.clientWidth }), i2 = l$1((() => (function(t3) {
+function y(t2) {
+  const e3 = l$1({ scrollLeft: t2.scrollLeft, scrollWidth: t2.scrollWidth, clientWidth: t2.clientWidth }), i2 = h$1((() => (function(t3) {
     const { scrollLeft: e4, scrollWidth: i3, clientWidth: n3 } = t3;
     if (0 === i3) return { startX: 0, endX: 1 };
     const s3 = e4 / i3, r2 = (e4 + n3) / i3;
     return { startX: Math.max(0, Math.min(1, s3)), endX: Math.max(0, Math.min(1, r2)) };
-  })(e3.value)), [e3]), n2 = l$1((() => (function(t3) {
+  })(e3.value)), [e3]), n2 = h$1((() => (function(t3) {
     return { left: t3.scrollLeft, right: t3.scrollLeft + t3.clientWidth };
   })(e3.value)), [e3]), s2 = () => {
     e3.set({ scrollLeft: t2.scrollLeft, scrollWidth: t2.scrollWidth, clientWidth: t2.clientWidth });
   };
   t2.addEventListener("scroll", s2, { passive: true });
   return { scrollData: e3, percentages: i2, bounds: n2, cleanup: () => {
-    t2.removeEventListener("scroll", s2), f(e3);
+    t2.removeEventListener("scroll", s2), b(e3);
   } };
 }
-class y extends e$1 {
+class C extends e$1 {
   constructor(t2, e3) {
-    super(), this.timeouts = [], this.isScrollable = false, this.audioData = null, this.resizeObserver = null, this.lastContainerWidth = 0, this.isDragging = false, this.subscriptions = [], this.unsubscribeOnScroll = [], this.dragStream = null, this.scrollStream = null, this.containerInlinePadding = 0, this.subscriptions = [], this.options = t2;
+    super(), this.timeouts = [], this.isScrollable = false, this.audioData = null, this.resizeObserver = null, this.lastContainerWidth = 0, this.isDragging = false, this.subscriptions = [], this.unsubscribeOnScroll = [], this.dragStream = null, this.scrollStream = null, this.containerInlinePadding = 0, this.onClickWrapper = (t3) => {
+      const e4 = this.wrapper.getBoundingClientRect(), [i3, n3] = m(e4, t3.clientX, t3.clientY);
+      this.emit("click", i3, n3);
+    }, this.onDblClickWrapper = (t3) => {
+      const e4 = this.wrapper.getBoundingClientRect(), [i3, n3] = m(e4, t3.clientX, t3.clientY);
+      this.emit("dblclick", i3, n3);
+    }, this.subscriptions = [], this.options = t2;
     const i2 = this.parentFromOptionsContainer(t2.container);
     this.parent = i2;
     const [n2, s2] = this.initHtml();
@@ -338,18 +356,12 @@ class y extends e$1 {
   }
   parentFromOptionsContainer(t2) {
     let e3;
-    if ("string" == typeof t2 ? e3 = document.querySelector(t2) : t2 instanceof HTMLElement && (e3 = t2), !e3) throw new Error("Container not found");
+    if ("string" == typeof t2 ? e3 = document.querySelector(t2) : r$1(t2) && (e3 = t2), !e3) throw new Error("Container not found");
     return e3;
   }
   initEvents() {
-    this.wrapper.addEventListener("click", ((t3) => {
-      const e3 = this.wrapper.getBoundingClientRect(), [i2, n2] = p(e3, t3.clientX, t3.clientY);
-      this.emit("click", i2, n2);
-    })), this.wrapper.addEventListener("dblclick", ((t3) => {
-      const e3 = this.wrapper.getBoundingClientRect(), [i2, n2] = p(e3, t3.clientX, t3.clientY);
-      this.emit("dblclick", i2, n2);
-    })), true !== this.options.dragToSeek && "object" != typeof this.options.dragToSeek || this.initDrag(), this.scrollStream = b(this.scrollContainer);
-    const t2 = h$1((() => {
+    this.wrapper.addEventListener("click", this.onClickWrapper), this.wrapper.addEventListener("dblclick", this.onDblClickWrapper), true !== this.options.dragToSeek && "object" != typeof this.options.dragToSeek || this.initDrag(), this.scrollStream = y(this.scrollContainer);
+    const t2 = c((() => {
       const { startX: t3, endX: e3 } = this.scrollStream.percentages.value, { left: i2, right: n2 } = this.scrollStream.bounds.value;
       this.emit("scroll", t3, e3, i2, n2);
     }), [this.scrollStream.percentages, this.scrollStream.bounds]);
@@ -368,42 +380,47 @@ class y extends e$1 {
   initDrag() {
     if (this.dragStream) return;
     this.dragStream = (function(t3, e3 = {}) {
-      const { threshold: i2 = 3, mouseButton: n2 = 0, touchDelay: s2 = 100 } = e3, r2 = a$1(null), o2 = /* @__PURE__ */ new Map(), l2 = matchMedia("(pointer: coarse)").matches;
+      const { threshold: i2 = 3, mouseButton: n2 = 0, touchDelay: s2 = 100 } = e3, r2 = l$1(null), o2 = /* @__PURE__ */ new Map(), a2 = matchMedia("(pointer: coarse)").matches;
       let h2 = () => {
       };
       const c2 = (e4) => {
         if (e4.button !== n2) return;
+        if (o2.has(e4.pointerId)) return;
         if (o2.set(e4.pointerId, e4), o2.size > 1) return;
-        let a2 = e4.clientX, c3 = e4.clientY, u2 = false;
-        const d2 = Date.now(), p2 = t3.getBoundingClientRect(), { left: m2, top: g2 } = p2, v2 = (t4) => {
+        const l2 = e4.pointerId;
+        let c3 = e4.clientX, u2 = e4.clientY, d2 = false;
+        const p2 = Date.now(), m2 = t3.getBoundingClientRect(), { left: g2, top: f2 } = m2, v2 = (t4) => {
+          if (t4.pointerId !== l2) return;
           if (t4.defaultPrevented || o2.size > 1) return;
-          if (l2 && Date.now() - d2 < s2) return;
-          const e5 = t4.clientX, n3 = t4.clientY, h3 = e5 - a2, p3 = n3 - c3;
-          (u2 || Math.abs(h3) > i2 || Math.abs(p3) > i2) && (t4.preventDefault(), t4.stopPropagation(), u2 || (r2.set({ type: "start", x: a2 - m2, y: c3 - g2 }), u2 = true), r2.set({ type: "move", x: e5 - m2, y: n3 - g2, deltaX: h3, deltaY: p3 }), a2 = e5, c3 = n3);
-        }, f2 = (t4) => {
-          if (o2.delete(t4.pointerId), u2) {
-            const e5 = t4.clientX, i3 = t4.clientY;
-            r2.set({ type: "end", x: e5 - m2, y: i3 - g2 });
-          }
-          h2();
+          if (a2 && Date.now() - p2 < s2) return;
+          const e5 = t4.clientX, n3 = t4.clientY, h3 = e5 - c3, m3 = n3 - u2;
+          (d2 || Math.abs(h3) > i2 || Math.abs(m3) > i2) && (t4.preventDefault(), t4.stopPropagation(), d2 || (r2.set({ type: "start", x: c3 - g2, y: u2 - f2 }), d2 = true), r2.set({ type: "move", x: e5 - g2, y: n3 - f2, deltaX: h3, deltaY: m3 }), c3 = e5, u2 = n3);
         }, b2 = (t4) => {
-          o2.delete(t4.pointerId), t4.relatedTarget && t4.relatedTarget !== document.documentElement || f2(t4);
+          if (o2.delete(t4.pointerId)) {
+            if (t4.pointerId === l2 && d2) {
+              const e5 = t4.clientX, i3 = t4.clientY;
+              r2.set({ type: "end", x: e5 - g2, y: i3 - f2 });
+            }
+            0 === o2.size && h2();
+          }
         }, y2 = (t4) => {
-          u2 && (t4.stopPropagation(), t4.preventDefault());
+          t4.relatedTarget && t4.relatedTarget !== document.documentElement || b2(t4);
         }, C2 = (t4) => {
-          t4.defaultPrevented || o2.size > 1 || u2 && t4.preventDefault();
+          d2 && (t4.stopPropagation(), t4.preventDefault());
+        }, S2 = (t4) => {
+          t4.defaultPrevented || o2.size > 1 || d2 && t4.preventDefault();
         };
-        document.addEventListener("pointermove", v2), document.addEventListener("pointerup", f2), document.addEventListener("pointerout", b2), document.addEventListener("pointercancel", b2), document.addEventListener("touchmove", C2, { passive: false }), document.addEventListener("click", y2, { capture: true }), h2 = () => {
-          document.removeEventListener("pointermove", v2), document.removeEventListener("pointerup", f2), document.removeEventListener("pointerout", b2), document.removeEventListener("pointercancel", b2), document.removeEventListener("touchmove", C2), setTimeout((() => {
-            document.removeEventListener("click", y2, { capture: true });
+        document.addEventListener("pointermove", v2), document.addEventListener("pointerup", b2), document.addEventListener("pointerout", y2), document.addEventListener("pointercancel", y2), document.addEventListener("touchmove", S2, { passive: false }), document.addEventListener("click", C2, { capture: true }), h2 = () => {
+          document.removeEventListener("pointermove", v2), document.removeEventListener("pointerup", b2), document.removeEventListener("pointerout", y2), document.removeEventListener("pointercancel", y2), document.removeEventListener("touchmove", S2), setTimeout((() => {
+            document.removeEventListener("click", C2, { capture: true });
           }), 10);
         };
       };
       return t3.addEventListener("pointerdown", c2), { signal: r2, cleanup: () => {
-        h2(), t3.removeEventListener("pointerdown", c2), o2.clear(), f(r2);
+        h2(), t3.removeEventListener("pointerdown", c2), o2.clear(), b(r2);
       } };
     })(this.wrapper);
-    const t2 = h$1((() => {
+    const t2 = c((() => {
       const t3 = this.dragStream.signal.value;
       if (!t3) return;
       const e3 = this.wrapper.getBoundingClientRect().width, i2 = (n2 = t3.x / e3) < 0 ? 0 : n2 > 1 ? 1 : n2;
@@ -519,7 +536,7 @@ class y extends e$1 {
   }
   destroy() {
     var t2;
-    this.subscriptions.forEach(((t3) => t3())), this.container.remove(), this.resizeObserver && (this.resizeObserver.disconnect(), this.resizeObserver = null), null === (t2 = this.unsubscribeOnScroll) || void 0 === t2 || t2.forEach(((t3) => t3())), this.unsubscribeOnScroll = [], this.dragStream && (this.dragStream.cleanup(), this.dragStream = null), this.scrollStream && (this.scrollStream.cleanup(), this.scrollStream = null);
+    this.wrapper.removeEventListener("click", this.onClickWrapper), this.wrapper.removeEventListener("dblclick", this.onDblClickWrapper), this.timeouts.forEach(((t3) => t3())), this.timeouts = [], this.subscriptions.forEach(((t3) => t3())), this.container.remove(), this.resizeObserver && (this.resizeObserver.disconnect(), this.resizeObserver = null), null === (t2 = this.unsubscribeOnScroll) || void 0 === t2 || t2.forEach(((t3) => t3())), this.unsubscribeOnScroll = [], this.dragStream && (this.dragStream.cleanup(), this.dragStream = null), this.scrollStream && (this.scrollStream.cleanup(), this.scrollStream = null);
   }
   createDelay(t2 = 10) {
     let e3, i2;
@@ -551,7 +568,9 @@ class y extends e$1 {
       if (!Array.isArray(t3)) return t3 || "";
       if (0 === t3.length) return "#999";
       if (t3.length < 2) return t3[0] || "";
-      const n2 = document.createElement("canvas"), s2 = n2.getContext("2d"), r2 = null != i2 ? i2 : n2.height * e4, o2 = s2.createLinearGradient(0, 0, 0, r2 || e4), a2 = 1 / (t3.length - 1);
+      const n2 = document.createElement("canvas"), s2 = n2.getContext("2d");
+      if (!s2) return t3[0] || "";
+      const r2 = i2 || n2.height * e4, o2 = s2.createLinearGradient(0, 0, 0, r2), a2 = 1 / (t3.length - 1);
       return t3.forEach(((t4, e5) => {
         o2.addColorStop(e5 * a2, t4);
       })), o2;
@@ -562,23 +581,23 @@ class y extends e$1 {
     var t2;
   }
   renderBarWaveform(t2, e3, i2, n2) {
-    const { width: s2, height: r2 } = i2.canvas, { halfHeight: o2, barWidth: a2, barRadius: l2, barIndexScale: h2, barSpacing: c2, barMinHeight: p2 } = (function({ width: t3, height: e4, length: i3, options: n3, pixelRatio: s3 }) {
+    const { width: s2, height: r2 } = i2.canvas, { halfHeight: o2, barWidth: a2, barRadius: l2, barIndexScale: h2, barSpacing: c2, barMinHeight: u2 } = (function({ width: t3, height: e4, length: i3, options: n3, pixelRatio: s3 }) {
       const r3 = e4 / 2, o3 = n3.barWidth ? n3.barWidth * s3 : 1, a3 = n3.barGap ? n3.barGap * s3 : n3.barWidth ? o3 / 2 : 0, l3 = o3 + a3 || 1;
       return { halfHeight: r3, barWidth: o3, barGap: a3, barRadius: n3.barRadius || 0, barMinHeight: n3.barMinHeight ? n3.barMinHeight * s3 : 0, barIndexScale: i3 > 0 ? t3 / l3 / i3 : 0, barSpacing: l3 };
     })({ width: s2, height: r2, length: (t2[0] || []).length, options: e3, pixelRatio: this.getPixelRatio() }), m2 = (function({ channelData: t3, barIndexScale: e4, barSpacing: i3, barWidth: n3, halfHeight: s3, vScale: r3, canvasHeight: o3, barAlign: a3, barMinHeight: l3 }) {
-      const h3 = t3[0] || [], c3 = t3[1] || h3, p3 = h3.length, m3 = [];
-      let g2 = 0, v2 = 0, f2 = 0;
-      for (let t4 = 0; t4 <= p3; t4++) {
-        const p4 = Math.round(t4 * e4);
-        if (p4 > g2) {
-          const { topHeight: t5, totalHeight: e5 } = u({ maxTop: v2, maxBottom: f2, halfHeight: s3, vScale: r3, barMinHeight: l3, barAlign: a3 }), h4 = d$1({ barAlign: a3, halfHeight: s3, topHeight: t5, totalHeight: e5, canvasHeight: o3 });
-          m3.push({ x: g2 * i3, y: h4, width: n3, height: e5 }), g2 = p4, v2 = 0, f2 = 0;
+      const h3 = t3[0] || [], c3 = t3[1] || h3, u3 = h3.length, m3 = [];
+      let g2 = 0, f2 = 0, v2 = 0;
+      for (let t4 = 0; t4 <= u3; t4++) {
+        const u4 = Math.round(t4 * e4);
+        if (u4 > g2) {
+          const { topHeight: t5, totalHeight: e5 } = d$1({ maxTop: f2, maxBottom: v2, halfHeight: s3, vScale: r3, barMinHeight: l3, barAlign: a3 }), h4 = p({ barAlign: a3, halfHeight: s3, topHeight: t5, totalHeight: e5, canvasHeight: o3 });
+          m3.push({ x: g2 * i3, y: h4, width: n3, height: e5 }), g2 = u4, f2 = 0, v2 = 0;
         }
         const b2 = Math.abs(h3[t4] || 0), y2 = Math.abs(c3[t4] || 0);
-        b2 > v2 && (v2 = b2), y2 > f2 && (f2 = y2);
+        b2 > f2 && (f2 = b2), y2 > v2 && (v2 = y2);
       }
       return m3;
-    })({ channelData: t2, barIndexScale: h2, barSpacing: c2, barWidth: a2, halfHeight: o2, vScale: n2, canvasHeight: r2, barAlign: e3.barAlign, barMinHeight: p2 });
+    })({ channelData: t2, barIndexScale: h2, barSpacing: c2, barWidth: a2, halfHeight: o2, vScale: n2, canvasHeight: r2, barAlign: e3.barAlign, barMinHeight: u2 });
     i2.beginPath();
     for (const t3 of m2) l2 && "roundRect" in i2 ? i2.roundRect(t3.x, t3.y, t3.width, t3.height, l2) : i2.rect(t3.x, t3.y, t3.width, t3.height);
     i2.fill(), i2.closePath();
@@ -626,7 +645,7 @@ class y extends e$1 {
       }
       return a2 ? r2 / a2 : r2;
     })({ channelData: t2, barHeight: e3.barHeight, normalize: e3.normalize, maxPeak: e3.maxPeak });
-    m(e3) ? this.renderBarWaveform(t2, e3, i2, n2) : this.renderLineWaveform(t2, e3, i2, n2);
+    g(e3) ? this.renderBarWaveform(t2, e3, i2, n2) : this.renderLineWaveform(t2, e3, i2, n2);
   }
   renderSingleCanvas(t2, e3, i2, n2, s2, r2, o2) {
     const a2 = this.getPixelRatio(), l2 = document.createElement("canvas");
@@ -639,7 +658,7 @@ class y extends e$1 {
   }
   renderMultiCanvas(t2, e3, i2, n2, s2, r2) {
     const o2 = this.getPixelRatio(), { clientWidth: a2 } = this.scrollContainer, l2 = i2 / o2, h2 = (function({ clientWidth: t3, totalWidth: e4, options: i3 }) {
-      return g(Math.min(8e3, t3, e4), i3);
+      return f(Math.min(8e3, t3, e4), i3);
     })({ clientWidth: a2, totalWidth: l2, options: e3 });
     let c2 = {};
     if (0 === h2) return;
@@ -649,7 +668,7 @@ class y extends e$1 {
       c2[i3] = true;
       const o3 = i3 * h2;
       let a3 = Math.min(l2 - o3, h2);
-      if (a3 = g(a3, e3), a3 <= 0) return;
+      if (a3 = f(a3, e3), a3 <= 0) return;
       const u3 = (function({ channelData: t3, offset: e4, clampedWidth: i4, totalWidth: n3 }) {
         return t3.map(((t4) => {
           const s3 = Math.floor(e4 / n3 * t4.length), r3 = Math.floor((e4 + i4) / n3 * t4.length);
@@ -688,7 +707,7 @@ class y extends e$1 {
   render(e3) {
     return t$1(this, void 0, void 0, (function* () {
       var t2;
-      this.timeouts.forEach(((t3) => t3())), this.timeouts = [], this.canvasWrapper.innerHTML = "", this.progressWrapper.innerHTML = "", null != this.options.width && (this.scrollContainer.style.width = "number" == typeof this.options.width ? `${this.options.width}px` : this.options.width);
+      this.timeouts.forEach(((t3) => t3())), this.timeouts = [], this.unsubscribeOnScroll.forEach(((t3) => t3())), this.unsubscribeOnScroll = [], this.canvasWrapper.innerHTML = "", this.progressWrapper.innerHTML = "", null != this.options.width && (this.scrollContainer.style.width = "number" == typeof this.options.width ? `${this.options.width}px` : this.options.width);
       const i2 = this.getPixelRatio(), n2 = this.scrollContainer.clientWidth - this.containerInlinePadding, { scrollWidth: s2, isScrollable: r2, useParentWidth: o2, width: a2 } = (function({ duration: t3, minPxPerSec: e4 = 0, parentWidth: i3, fillParent: n3, pixelRatio: s3 }) {
         const r3 = Math.ceil(t3 * e4), o3 = r3 > i3, a3 = Boolean(n3 && !o3);
         return { scrollWidth: r3, isScrollable: o3, useParentWidth: a3, width: (a3 ? i3 : r3) * s3 };
@@ -757,7 +776,7 @@ class y extends e$1 {
     }));
   }
 }
-class C extends e$1 {
+class S extends e$1 {
   constructor() {
     super(...arguments), this.animationFrameId = null, this.isRunning = false;
   }
@@ -773,12 +792,12 @@ class C extends e$1 {
     this.isRunning = false, null !== this.animationFrameId && (cancelAnimationFrame(this.animationFrameId), this.animationFrameId = null);
   }
   destroy() {
-    this.stop();
+    this.stop(), this.unAll();
   }
 }
-class S extends e$1 {
+class E extends e$1 {
   constructor(t2) {
-    super(), this.bufferNode = null, this.playStartTime = 0, this.playbackPosition = 0, this._muted = false, this._playbackRate = 1, this._duration = void 0, this.buffer = null, this.currentSrc = "", this.paused = true, this.crossOrigin = null, this.seeking = false, this.autoplay = false, this.addEventListener = this.on, this.removeEventListener = this.un, (function() {
+    super(), this.bufferNode = null, this.playStartTime = 0, this.playbackPosition = 0, this._muted = false, this._playbackRate = 1, this._duration = void 0, this.buffer = null, this.currentSrc = "", this.paused = true, this.crossOrigin = null, this.seeking = false, this.autoplay = false, this.addEventListener = this.on, this.removeEventListener = this.un, this._destroyed = false, (function() {
       const t3 = globalThis.navigator;
       if (null == t3 ? void 0 : t3.audioSession) try {
         t3.audioSession.type = "playback";
@@ -790,6 +809,23 @@ class S extends e$1 {
   load() {
     return t$1(this, void 0, void 0, (function* () {
     }));
+  }
+  remove() {
+    this.destroy();
+  }
+  destroy() {
+    if (!this._destroyed) {
+      if (this._destroyed = true, this.currentSrc = "", this.bufferNode) {
+        this.bufferNode.onended = null;
+        try {
+          this.bufferNode.stop();
+        } catch (t2) {
+        }
+        this.bufferNode.disconnect(), this.bufferNode = null;
+      }
+      this.gainNode.disconnect(), "function" == typeof this.audioContext.close && Promise.resolve(this.audioContext.close.call(this.audioContext)).catch((() => {
+      })), this.buffer = null, this.unAll();
+    }
   }
   get src() {
     return this.currentSrc;
@@ -814,8 +850,14 @@ class S extends e$1 {
     };
   }
   _pause() {
-    var t2;
-    this.paused = true, null === (t2 = this.bufferNode) || void 0 === t2 || t2.stop(), this.playbackPosition += (this.audioContext.currentTime - this.playStartTime) * this._playbackRate;
+    if (this.paused = true, this.bufferNode) {
+      this.bufferNode.onended = null;
+      try {
+        this.bufferNode.stop();
+      } catch (t2) {
+      }
+    }
+    this.playbackPosition += (this.audioContext.currentTime - this.playStartTime) * this._playbackRate;
   }
   play() {
     return t$1(this, void 0, void 0, (function* () {
@@ -826,9 +868,9 @@ class S extends e$1 {
     this.paused || (this._pause(), this.emit("pause"));
   }
   stopAt(t2) {
-    const e3 = t2 - this.currentTime, i2 = this.bufferNode;
+    const e3 = (t2 - this.currentTime) / this._playbackRate, i2 = this.bufferNode;
     null == i2 || i2.stop(this.audioContext.currentTime + e3), null == i2 || i2.addEventListener("ended", (() => {
-      i2 === this.bufferNode && (this.bufferNode = null, this.pause());
+      i2 === this.bufferNode && (this.bufferNode = null, this.pause(), this.playbackPosition = Math.min(t2, this.duration), this.emit("timeupdate"));
     }), { once: true });
   }
   setSinkId(e3) {
@@ -905,9 +947,9 @@ class S extends e$1 {
   }
 }
 const P = { waveColor: "#999", progressColor: "#555", cursorWidth: 1, minPxPerSec: 0, fillParent: true, interact: true, dragToSeek: false, autoScroll: true, autoCenter: true, sampleRate: 8e3 };
-class E extends c {
+class w extends u {
   static create(t2) {
-    return new E(t2);
+    return new w(t2);
   }
   getState() {
     return this.wavesurferState;
@@ -916,14 +958,14 @@ class E extends c {
     return this.renderer;
   }
   constructor(t2) {
-    const e3 = t2.media || ("WebAudio" === t2.backend ? new S() : void 0);
-    super({ media: e3, mediaControls: t2.mediaControls, autoplay: t2.autoplay, playbackRate: t2.audioRate }), this.plugins = [], this.decodedData = null, this.stopAtPosition = null, this.subscriptions = [], this.mediaSubscriptions = [], this.abortController = null, this.reactiveCleanups = [], this.options = Object.assign({}, P, t2);
+    const e3 = t2.media || ("WebAudio" === t2.backend ? new E() : void 0);
+    super({ media: e3, mediaControls: t2.mediaControls, autoplay: t2.autoplay, playbackRate: t2.audioRate }), this.plugins = [], this.decodedData = null, this.stopAtPosition = null, this.subscriptions = [], this.mediaSubscriptions = [], this.abortController = null, this._isDestroyed = false, this._loadVersion = 0, this.reactiveCleanups = [], this.options = Object.assign({}, P, t2);
     const { state: i2, actions: n2 } = (function(t3) {
       var e4, i3, n3, s3, r3, o2;
-      const h2 = null !== (e4 = null == t3 ? void 0 : t3.currentTime) && void 0 !== e4 ? e4 : a$1(0), c2 = null !== (i3 = null == t3 ? void 0 : t3.duration) && void 0 !== i3 ? i3 : a$1(0), u2 = null !== (n3 = null == t3 ? void 0 : t3.isPlaying) && void 0 !== n3 ? n3 : a$1(false), d2 = null !== (s3 = null == t3 ? void 0 : t3.isSeeking) && void 0 !== s3 ? s3 : a$1(false), p2 = null !== (r3 = null == t3 ? void 0 : t3.volume) && void 0 !== r3 ? r3 : a$1(1), m2 = null !== (o2 = null == t3 ? void 0 : t3.playbackRate) && void 0 !== o2 ? o2 : a$1(1), g2 = a$1(null), v2 = a$1(null), f2 = a$1(""), b2 = a$1(0), y2 = a$1(0), C2 = l$1((() => !u2.value), [u2]), S2 = l$1((() => null !== g2.value), [g2]), P2 = l$1((() => S2.value && c2.value > 0), [S2, c2]), E2 = l$1((() => h2.value), [h2]), w = l$1((() => c2.value > 0 ? h2.value / c2.value : 0), [h2, c2]);
-      return { state: { currentTime: h2, duration: c2, isPlaying: u2, isPaused: C2, isSeeking: d2, volume: p2, playbackRate: m2, audioBuffer: g2, peaks: v2, url: f2, zoom: b2, scrollPosition: y2, canPlay: S2, isReady: P2, progress: E2, progressPercent: w }, actions: { setCurrentTime: (t4) => {
+      const a2 = null !== (e4 = null == t3 ? void 0 : t3.currentTime) && void 0 !== e4 ? e4 : l$1(0), c2 = null !== (i3 = null == t3 ? void 0 : t3.duration) && void 0 !== i3 ? i3 : l$1(0), u2 = null !== (n3 = null == t3 ? void 0 : t3.isPlaying) && void 0 !== n3 ? n3 : l$1(false), d2 = null !== (s3 = null == t3 ? void 0 : t3.isSeeking) && void 0 !== s3 ? s3 : l$1(false), p2 = null !== (r3 = null == t3 ? void 0 : t3.volume) && void 0 !== r3 ? r3 : l$1(1), m2 = null !== (o2 = null == t3 ? void 0 : t3.playbackRate) && void 0 !== o2 ? o2 : l$1(1), g2 = l$1(null), f2 = l$1(null), v2 = l$1(""), b2 = l$1(0), y2 = l$1(0), C2 = h$1((() => !u2.value), [u2]), S2 = h$1((() => null !== g2.value), [g2]), E2 = h$1((() => S2.value && c2.value > 0), [S2, c2]), P2 = h$1((() => a2.value), [a2]), w2 = h$1((() => c2.value > 0 ? a2.value / c2.value : 0), [a2, c2]);
+      return { state: { currentTime: a2, duration: c2, isPlaying: u2, isPaused: C2, isSeeking: d2, volume: p2, playbackRate: m2, audioBuffer: g2, peaks: f2, url: v2, zoom: b2, scrollPosition: y2, canPlay: S2, isReady: E2, progress: P2, progressPercent: w2 }, actions: { setCurrentTime: (t4) => {
         const e5 = Math.max(0, Math.min(c2.value || 1 / 0, t4));
-        h2.set(e5);
+        a2.set(e5);
       }, setDuration: (t4) => {
         c2.set(Math.max(0, t4));
       }, setPlaying: (t4) => {
@@ -939,24 +981,23 @@ class E extends c {
       }, setAudioBuffer: (t4) => {
         g2.set(t4), t4 && c2.set(t4.duration);
       }, setPeaks: (t4) => {
-        v2.set(t4);
-      }, setUrl: (t4) => {
         f2.set(t4);
+      }, setUrl: (t4) => {
+        v2.set(t4);
       }, setZoom: (t4) => {
         b2.set(Math.max(0, t4));
       }, setScrollPosition: (t4) => {
         y2.set(Math.max(0, t4));
       } } };
     })({ isPlaying: this.isPlayingSignal, currentTime: this.currentTimeSignal, duration: this.durationSignal, volume: this.volumeSignal, playbackRate: this.playbackRateSignal, isSeeking: this.seekingSignal });
-    this.wavesurferState = i2, this.wavesurferActions = n2, this.timer = new C();
+    this.wavesurferState = i2, this.wavesurferActions = n2, this.timer = new S();
     const s2 = e3 ? void 0 : this.getMediaElement();
-    this.renderer = new y(this.options, s2), this.initPlayerEvents(), this.initRendererEvents(), this.initTimerEvents(), this.initReactiveState(), this.initPlugins();
+    this.renderer = new C(this.options, s2), this.initPlayerEvents(), this.initRendererEvents(), this.initTimerEvents(), this.initReactiveState(), this.initPlugins();
     const r2 = this.options.url || this.getSrc() || "";
     Promise.resolve().then((() => {
       this.emit("init");
       const { peaks: t3, duration: e4 } = this.options;
-      (r2 || t3 && e4) && this.load(r2, t3, e4).catch(((t4) => {
-        this.emit("error", t4 instanceof Error ? t4 : new Error(String(t4)));
+      (r2 || t3 && e4) && this.load(r2, t3, e4).catch((() => {
       }));
     }));
   }
@@ -967,31 +1008,36 @@ class E extends c {
     this.subscriptions.push(this.timer.on("tick", (() => {
       if (!this.isSeeking()) {
         const t2 = this.updateProgress();
-        this.emit("timeupdate", t2), this.emit("audioprocess", t2), null != this.stopAtPosition && this.isPlaying() && t2 >= this.stopAtPosition && this.pause();
+        if (this.emit("timeupdate", t2), this.emit("audioprocess", t2), null != this.stopAtPosition && this.isPlaying() && t2 >= this.stopAtPosition) {
+          const t3 = this.stopAtPosition;
+          this.pause(), this.setTime(t3);
+        }
       }
     })));
   }
   initReactiveState() {
     this.reactiveCleanups.push((function(t2, e3) {
       const i2 = [];
-      i2.push(h$1((() => {
+      i2.push(c((() => {
         const i3 = t2.isPlaying.value;
         e3.emit(i3 ? "play" : "pause");
-      }), [t2.isPlaying])), i2.push(h$1((() => {
+      }), [t2.isPlaying])), i2.push(c((() => {
         const i3 = t2.currentTime.value;
         e3.emit("timeupdate", i3), t2.isPlaying.value && e3.emit("audioprocess", i3);
-      }), [t2.currentTime, t2.isPlaying])), i2.push(h$1((() => {
+      }), [t2.currentTime, t2.isPlaying])), i2.push(c((() => {
         t2.isSeeking.value && e3.emit("seeking", t2.currentTime.value);
       }), [t2.isSeeking, t2.currentTime]));
       let n2 = false;
-      i2.push(h$1((() => {
+      i2.push(c((() => {
         t2.isReady.value && !n2 && (n2 = true, e3.emit("ready", t2.duration.value));
-      }), [t2.isReady, t2.duration]));
+      }), [t2.isReady, t2.duration])), i2.push(c((() => {
+        null === t2.audioBuffer.value && (n2 = false);
+      }), [t2.audioBuffer]));
       let s2 = false;
-      return i2.push(h$1((() => {
+      return i2.push(c((() => {
         const i3 = t2.isPlaying.value, n3 = t2.currentTime.value, r2 = t2.duration.value, o2 = r2 > 0 && n3 >= r2;
         s2 && !i3 && o2 && e3.emit("finish"), s2 = i3 && o2;
-      }), [t2.isPlaying, t2.currentTime, t2.duration])), i2.push(h$1((() => {
+      }), [t2.isPlaying, t2.currentTime, t2.duration])), i2.push(c((() => {
         const i3 = t2.zoom.value;
         i3 > 0 && e3.emit("zoom", i3);
       }), [t2.zoom])), () => {
@@ -1099,29 +1145,34 @@ class E extends c {
   loadAudio(e3, n2, s2, r2) {
     return t$1(this, void 0, void 0, (function* () {
       var t2;
-      if (this.emit("load", e3), !this.options.media && this.isPlaying() && this.pause(), this.decodedData = null, this.stopAtPosition = null, null === (t2 = this.abortController) || void 0 === t2 || t2.abort(), this.abortController = null, !n2 && !s2) {
+      const o2 = ++this._loadVersion;
+      if (this._isDestroyed = false, this.emit("load", e3), !this.options.media && this.isPlaying() && this.pause(), this.decodedData = null, this.stopAtPosition = null, null === (t2 = this.abortController) || void 0 === t2 || t2.abort(), this.abortController = null, !n2 && !s2) {
         const t3 = this.options.fetchParams || {};
         window.AbortController && !t3.signal && (this.abortController = new AbortController(), t3.signal = this.abortController.signal);
         const i2 = (t4) => this.emit("loading", t4);
-        n2 = yield o$1.fetchBlob(e3, i2, t3);
+        if (n2 = yield a$1.fetchBlob(e3, i2, t3), this._isDestroyed || o2 !== this._loadVersion) return;
         const s3 = this.options.blobMimeType;
         s3 && (n2 = new Blob([n2], { type: s3 }));
       }
+      if (this._isDestroyed || o2 !== this._loadVersion) return;
       this.setSrc(e3, n2);
-      const a2 = yield new Promise(((t3) => {
+      const l2 = yield new Promise(((t3) => {
         const e4 = r2 || this.getDuration();
         e4 ? t3(e4) : this.mediaSubscriptions.push(this.onMediaEvent("loadedmetadata", (() => t3(this.getDuration())), { once: true }));
       }));
-      if (!e3 && !n2) {
-        const t3 = this.getMediaElement();
-        t3 instanceof S && (t3.duration = a2);
+      if (!this._isDestroyed && o2 === this._loadVersion) {
+        if (!e3 && !n2) {
+          const t3 = this.getMediaElement();
+          t3 instanceof E && (t3.duration = l2);
+        }
+        if (s2) this.decodedData = i$1.createBuffer(s2, l2 || 0);
+        else if (n2) {
+          const t3 = yield n2.arrayBuffer();
+          if (this._isDestroyed || o2 !== this._loadVersion) return;
+          this.decodedData = yield i$1.decode(t3, this.options.sampleRate);
+        }
+        this._isDestroyed || o2 !== this._loadVersion || (this.decodedData && (this.emit("decode", this.getDuration()), this.renderer.render(this.decodedData)), this.emit("ready", this.getDuration()));
       }
-      if (s2) this.decodedData = i$1.createBuffer(s2, a2 || 0);
-      else if (n2) {
-        const t3 = yield n2.arrayBuffer();
-        this.decodedData = yield i$1.decode(t3, this.options.sampleRate);
-      }
-      this.decodedData && (this.emit("decode", this.getDuration()), this.renderer.render(this.decodedData)), this.emit("ready", this.getDuration());
     }));
   }
   load(e3, i2, n2) {
@@ -1186,7 +1237,7 @@ class E extends c {
     return t$1(this, void 0, void 0, (function* () {
       null != e3 && this.setTime(e3);
       const t2 = yield n2.play.call(this);
-      return null != i2 && (this.media instanceof S ? this.media.stopAt(i2) : this.stopAtPosition = i2), t2;
+      return null != i2 && (this.media instanceof E ? this.media.stopAt(i2) : this.stopAtPosition = i2), t2;
     }));
   }
   playPause() {
@@ -1213,10 +1264,10 @@ class E extends c {
   }
   destroy() {
     var t2;
-    this.emit("destroy"), null === (t2 = this.abortController) || void 0 === t2 || t2.abort(), this.plugins.forEach(((t3) => t3.destroy())), this.subscriptions.forEach(((t3) => t3())), this.unsubscribePlayerEvents(), this.reactiveCleanups.forEach(((t3) => t3())), this.reactiveCleanups = [], this.timer.destroy(), this.renderer.destroy(), super.destroy();
+    this._isDestroyed = true, this.emit("destroy"), null === (t2 = this.abortController) || void 0 === t2 || t2.abort(), this.plugins.forEach(((t3) => t3.destroy())), this.subscriptions.forEach(((t3) => t3())), this.unsubscribePlayerEvents(), this.reactiveCleanups.forEach(((t3) => t3())), this.reactiveCleanups = [], this.timer.destroy(), this.renderer.destroy(), super.destroy();
   }
 }
-E.BasePlugin = class extends e$1 {
+w.BasePlugin = class extends e$1 {
   constructor(t2) {
     super(), this.subscriptions = [], this.isDestroyed = false, this.options = t2;
   }
@@ -1228,7 +1279,7 @@ E.BasePlugin = class extends e$1 {
   destroy() {
     this.emit("destroy"), this.subscriptions.forEach(((t2) => t2())), this.subscriptions = [], this.isDestroyed = true, this.wavesurfer = void 0;
   }
-}, E.dom = r$1;
+}, w.dom = o$1;
 class t {
   constructor() {
     this.listeners = {};
@@ -1317,29 +1368,34 @@ function h(t2, e3 = {}) {
   };
   const c2 = (e4) => {
     if (e4.button !== n2) return;
+    if (h2.has(e4.pointerId)) return;
     if (h2.set(e4.pointerId, e4), h2.size > 1) return;
-    let s2 = e4.clientX, l2 = e4.clientY, c3 = false;
-    const u2 = Date.now(), v2 = t2.getBoundingClientRect(), { left: p2, top: g2 } = v2, m2 = (t3) => {
+    const s2 = e4.pointerId;
+    let l2 = e4.clientX, c3 = e4.clientY, u2 = false;
+    const v2 = Date.now(), p2 = t2.getBoundingClientRect(), { left: g2, top: m2 } = p2, f2 = (t3) => {
+      if (t3.pointerId !== s2) return;
       if (t3.defaultPrevented || h2.size > 1) return;
-      if (a2 && Date.now() - u2 < r2) return;
-      const e5 = t3.clientX, n3 = t3.clientY, d3 = e5 - s2, v3 = n3 - l2;
-      (c3 || Math.abs(d3) > i2 || Math.abs(v3) > i2) && (t3.preventDefault(), t3.stopPropagation(), c3 || (o2.set({ type: "start", x: s2 - p2, y: l2 - g2 }), c3 = true), o2.set({ type: "move", x: e5 - p2, y: n3 - g2, deltaX: d3, deltaY: v3 }), s2 = e5, l2 = n3);
-    }, f2 = (t3) => {
-      if (h2.delete(t3.pointerId), c3) {
-        const e5 = t3.clientX, i3 = t3.clientY;
-        o2.set({ type: "end", x: e5 - p2, y: i3 - g2 });
-      }
-      d2();
+      if (a2 && Date.now() - v2 < r2) return;
+      const e5 = t3.clientX, n3 = t3.clientY, d3 = e5 - l2, p3 = n3 - c3;
+      (u2 || Math.abs(d3) > i2 || Math.abs(p3) > i2) && (t3.preventDefault(), t3.stopPropagation(), u2 || (o2.set({ type: "start", x: l2 - g2, y: c3 - m2 }), u2 = true), o2.set({ type: "move", x: e5 - g2, y: n3 - m2, deltaX: d3, deltaY: p3 }), l2 = e5, c3 = n3);
     }, b2 = (t3) => {
-      h2.delete(t3.pointerId), t3.relatedTarget && t3.relatedTarget !== document.documentElement || f2(t3);
+      if (h2.delete(t3.pointerId)) {
+        if (t3.pointerId === s2 && u2) {
+          const e5 = t3.clientX, i3 = t3.clientY;
+          o2.set({ type: "end", x: e5 - g2, y: i3 - m2 });
+        }
+        0 === h2.size && d2();
+      }
     }, E2 = (t3) => {
-      c3 && (t3.stopPropagation(), t3.preventDefault());
+      t3.relatedTarget && t3.relatedTarget !== document.documentElement || b2(t3);
     }, C2 = (t3) => {
-      t3.defaultPrevented || h2.size > 1 || c3 && t3.preventDefault();
+      u2 && (t3.stopPropagation(), t3.preventDefault());
+    }, L = (t3) => {
+      t3.defaultPrevented || h2.size > 1 || u2 && t3.preventDefault();
     };
-    document.addEventListener("pointermove", m2), document.addEventListener("pointerup", f2), document.addEventListener("pointerout", b2), document.addEventListener("pointercancel", b2), document.addEventListener("touchmove", C2, { passive: false }), document.addEventListener("click", E2, { capture: true }), d2 = () => {
-      document.removeEventListener("pointermove", m2), document.removeEventListener("pointerup", f2), document.removeEventListener("pointerout", b2), document.removeEventListener("pointercancel", b2), document.removeEventListener("touchmove", C2), setTimeout((() => {
-        document.removeEventListener("click", E2, { capture: true });
+    document.addEventListener("pointermove", f2), document.addEventListener("pointerup", b2), document.addEventListener("pointerout", E2), document.addEventListener("pointercancel", E2), document.addEventListener("touchmove", L, { passive: false }), document.addEventListener("click", C2, { capture: true }), d2 = () => {
+      document.removeEventListener("pointermove", f2), document.removeEventListener("pointerup", b2), document.removeEventListener("pointerout", E2), document.removeEventListener("pointercancel", E2), document.removeEventListener("touchmove", L), setTimeout((() => {
+        document.removeEventListener("click", C2, { capture: true });
       }), 10);
     };
   };
@@ -1505,13 +1561,24 @@ class d extends e2 {
   }
   avoidOverlapping(t2) {
     t2.content && !t2.isRemoved && setTimeout((() => {
-      const e3 = t2.content, i2 = e3.getBoundingClientRect(), n2 = this.regions.indexOf(t2), s2 = this.regions.slice(0, n2).filter(((t3) => !t3.isRemoved)).map(((e4) => {
-        if (e4 === t2 || !e4.content) return 0;
-        const n3 = e4.content.getBoundingClientRect();
-        return i2.left < n3.left + n3.width && n3.left < i2.left + i2.width ? n3.height + 2 : 0;
-      })).reduce(((t3, e4) => t3 + e4), 0);
+      if (!t2.content) return;
+      const e3 = t2.content;
+      e3.style.marginTop = "0";
+      const i2 = e3.getBoundingClientRect(), n2 = this.regions.indexOf(t2);
+      if (n2 < 0) return;
+      const s2 = this.regions.slice(0, n2).filter(((t3) => !t3.isRemoved)).reduce(((e4, n3) => {
+        if (n3 === t2 || !n3.content) return e4;
+        const s3 = n3.content.getBoundingClientRect();
+        return i2.left < s3.right && s3.left < i2.right && e4.push(s3), e4;
+      }), []).sort(((t3, e4) => t3.top - e4.top)).reduce(((t3, e4) => {
+        const n3 = i2.top + t3, s3 = n3 + i2.height;
+        return n3 < e4.bottom && e4.top < s3 ? e4.bottom - i2.top + 2 : t3;
+      }), 0);
       e3.style.marginTop = `${s2}px`;
     }), 10);
+  }
+  avoidOverlappingAll() {
+    this.regions.forEach(((t2) => this.avoidOverlapping(t2)));
   }
   adjustScroll(t2) {
     var e3, i2;
@@ -1544,7 +1611,7 @@ class d extends e2 {
     const e3 = [t2.on("update", ((e4) => {
       e4 || this.adjustScroll(t2), this.emit("region-update", t2, e4);
     })), t2.on("update-end", ((e4) => {
-      this.avoidOverlapping(t2), this.emit("region-updated", t2, e4);
+      this.avoidOverlappingAll(), this.emit("region-updated", t2, e4);
     })), t2.on("play", ((e4) => {
       var i2;
       null === (i2 = this.wavesurfer) || void 0 === i2 || i2.play(t2.start, e4);
@@ -1596,6 +1663,6 @@ class d extends e2 {
   }
 }
 export {
-  E,
-  d
+  d,
+  w
 };

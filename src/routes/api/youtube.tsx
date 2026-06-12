@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
-import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Flags } from "youtube-dl-exec";
@@ -28,16 +27,17 @@ type YoutubeDlResult = {
   requested_formats?: Array<{ mime_type?: string }>;
 };
 
-const require = createRequire(import.meta.url);
+type YoutubeDl = typeof import("youtube-dl-exec").default;
 
 async function getYoutubeDl() {
-  const mod = await import("youtube-dl-exec");
-  return mod.default;
+  const module = await import("youtube-dl-exec");
+  return module.default as YoutubeDl;
 }
 
-function getFfmpegPath() {
+async function getFfmpegPath() {
   try {
-    const ffmpegPath = require("ffmpeg-static");
+    const module = await import("ffmpeg-static");
+    const ffmpegPath = module.default;
     return typeof ffmpegPath === "string" && ffmpegPath ? ffmpegPath : undefined;
   } catch {
     return undefined;
@@ -125,7 +125,7 @@ async function extractYouTubeAudio({
 
   try {
     const youtubedl = await getYoutubeDl();
-    const ffmpegPath = getFfmpegPath();
+    const ffmpegPath = await getFfmpegPath();
     if (!ffmpegPath) throw new Error("ffmpeg_static_not_available");
 
     const ytdlpOptions: Flags = {
