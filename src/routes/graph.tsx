@@ -408,22 +408,37 @@ function GraphLab() {
         </>
       }
     >
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[340px_minmax(0,1fr)]">
-        {/* Sidebar */}
-        <div className="order-2 flex max-h-[45vh] flex-col gap-4 overflow-y-auto pr-1 lg:order-1 lg:max-h-none lg:overflow-visible lg:pr-0">
-          <Panel>
+      <div className="-mx-6 flex h-[calc(100dvh-92px)] min-h-0 flex-col gap-3 overflow-hidden md:mx-0 md:h-[calc(100vh-132px)] md:flex-row md:gap-4">
+        <div className="order-1 flex h-[50dvh] min-h-[320px] shrink-0 flex-col md:order-2 md:h-auto md:min-h-0 md:min-w-0 md:flex-1">
+          <Panel className="relative h-full rounded-none border-x-0 bg-white/5 shadow-2xl backdrop-blur-xl md:rounded-2xl md:border-x">
+            <div
+              ref={wrapRef}
+              className="relative h-full min-h-0 touch-none cursor-grab select-none active:cursor-grabbing"
+              style={{ touchAction: "none" }}
+            >
+              <canvas ref={canvasRef} className="absolute inset-0" />
+              <div className="pointer-events-none absolute left-3 top-3 rounded-md border border-white/10 bg-black/40 px-2 py-1 font-mono text-[10px] text-muted-foreground backdrop-blur">
+                scale {view.scale.toFixed(0)} px/u · center ({view.cx.toFixed(2)},{" "}
+                {view.cy.toFixed(2)})
+              </div>
+            </div>
+          </Panel>
+        </div>
+
+        <div className="order-2 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-5 md:order-1 md:w-[340px] md:flex-none md:px-0 md:pb-0">
+          <Panel className="bg-white/5 shadow-2xl backdrop-blur-xl">
             <PanelHeader>
               <span>Equations</span>
               <div className="flex gap-1">
                 <button
                   onClick={() => addEq("function")}
-                  className="rounded px-2 py-0.5 text-[10px] hover:bg-white/10"
+                  className="min-h-10 touch-manipulation rounded-lg px-3 text-xs hover:bg-white/10 md:min-h-0 md:px-2 md:py-0.5 md:text-[10px]"
                 >
                   + f(x)
                 </button>
                 <button
                   onClick={() => addEq("polar")}
-                  className="rounded px-2 py-0.5 text-[10px] hover:bg-white/10"
+                  className="min-h-10 touch-manipulation rounded-lg px-3 text-xs hover:bg-white/10 md:min-h-0 md:px-2 md:py-0.5 md:text-[10px]"
                 >
                   + r(θ)
                 </button>
@@ -497,7 +512,7 @@ function GraphLab() {
                           ev.stopPropagation();
                           removeEq(e.id);
                         }}
-                        className="text-muted-foreground hover:text-foreground"
+                        className="min-h-10 min-w-10 touch-manipulation rounded-lg text-muted-foreground hover:bg-white/10 hover:text-foreground md:min-h-0 md:min-w-0 md:bg-transparent md:hover:bg-transparent"
                       >
                         ×
                       </button>
@@ -509,7 +524,7 @@ function GraphLab() {
             </div>
           </Panel>
 
-          <Panel>
+          <Panel className="bg-white/5 shadow-2xl backdrop-blur-xl">
             <PanelHeader>
               <span>Parameters</span>
             </PanelHeader>
@@ -534,23 +549,6 @@ function GraphLab() {
               <p className="font-mono text-[10px] text-muted-foreground">
                 Use <code>a</code> and <code>k</code> in your equations.
               </p>
-            </div>
-          </Panel>
-        </div>
-
-        {/* Canvas */}
-        <div className="order-1 flex min-h-[50vh] flex-col gap-4 lg:order-2">
-          <Panel className="relative">
-            <div
-              ref={wrapRef}
-              className="relative h-[52vh] min-h-[360px] touch-none cursor-grab select-none active:cursor-grabbing sm:h-[58vh] lg:h-[calc(100vh-220px)] lg:min-h-[500px]"
-              style={{ touchAction: "none" }}
-            >
-              <canvas ref={canvasRef} className="absolute inset-0" />
-              <div className="pointer-events-none absolute left-3 top-3 rounded-md border border-white/10 bg-black/40 px-2 py-1 font-mono text-[10px] text-muted-foreground backdrop-blur">
-                scale {view.scale.toFixed(0)} px/u · center ({view.cx.toFixed(2)},{" "}
-                {view.cy.toFixed(2)})
-              </div>
             </div>
           </Panel>
         </div>

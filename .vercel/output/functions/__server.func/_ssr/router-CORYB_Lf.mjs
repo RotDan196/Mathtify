@@ -19,7 +19,7 @@ import "crypto";
 import "async_hooks";
 import "stream";
 import "../_libs/isbot.mjs";
-const appCss = "/assets/styles-D0kJ1OWC.css";
+const appCss = "/assets/styles-DaY9evUD.css";
 function reportLovableError(error, context = {}) {
   if (typeof window === "undefined") return;
   window.__lovableEvents?.captureException?.(
@@ -156,7 +156,7 @@ const Route$7 = createFileRoute("/whiteboard")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$6, "component")
 });
-const $$splitComponentImporter$5 = () => import("./graph-R1mGD4PM.mjs");
+const $$splitComponentImporter$5 = () => import("./graph-8G3e_3jE.mjs");
 const Route$6 = createFileRoute("/graph")({
   head: () => ({
     meta: [{
@@ -216,20 +216,20 @@ const Route$2 = createFileRoute("/audio")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$1, "component")
 });
-const $$splitComponentImporter = () => import("./index-1Dkej0Lq.mjs");
+const $$splitComponentImporter = () => import("./index-2Cnp1Awl.mjs");
 const Route$1 = createFileRoute("/")({
   head: () => ({
     meta: [{
-      title: "RotVerse — A universe of interactive tools"
+      title: "RotVerse - A universe of interactive tools"
     }, {
       name: "description",
-      content: "RotVerse is a modern playground for interactive math, document viewing, and creative tools — all in one place."
+      content: "RotVerse is a modern playground for interactive math, document viewing, audio tools, and creative utilities."
     }, {
       property: "og:title",
       content: "RotVerse"
     }, {
       property: "og:description",
-      content: "A universe of interactive tools: graphing, documents, and more."
+      content: "A universe of interactive tools: graphing, documents, audio, and more."
     }]
   }),
   component: lazyRouteComponent($$splitComponentImporter, "component")

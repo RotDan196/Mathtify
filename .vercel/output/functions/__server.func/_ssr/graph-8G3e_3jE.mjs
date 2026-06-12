@@ -405,14 +405,29 @@ function GraphLab() {
       scale: Math.max(8, v.scale / 1.2)
     })), title: "Zoom out", className: "min-h-[44px] min-w-[44px] touch-manipulation p-3 md:min-h-9 md:min-w-9 md:p-0 md:px-2", children: "−" }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(IconButton, { onClick: resetView, title: "Reset view", className: "min-h-[44px] min-w-[44px] touch-manipulation p-3 md:min-h-9 md:min-w-9 md:p-0 md:px-2", children: "⌖" })
-  ] }), children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid grid-cols-1 gap-4 lg:grid-cols-[340px_minmax(0,1fr)]", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "order-2 flex max-h-[45vh] flex-col gap-4 overflow-y-auto pr-1 lg:order-1 lg:max-h-none lg:overflow-visible lg:pr-0", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs(Panel, { children: [
+  ] }), children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "-mx-6 flex h-[calc(100dvh-92px)] min-h-0 flex-col gap-3 overflow-hidden md:mx-0 md:h-[calc(100vh-132px)] md:flex-row md:gap-4", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "order-1 flex h-[50dvh] min-h-[320px] shrink-0 flex-col md:order-2 md:h-auto md:min-h-0 md:min-w-0 md:flex-1", children: /* @__PURE__ */ jsxRuntimeExports.jsx(Panel, { className: "relative h-full rounded-none border-x-0 bg-white/5 shadow-2xl backdrop-blur-xl md:rounded-2xl md:border-x", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { ref: wrapRef, className: "relative h-full min-h-0 touch-none cursor-grab select-none active:cursor-grabbing", style: {
+      touchAction: "none"
+    }, children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("canvas", { ref: canvasRef, className: "absolute inset-0" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "pointer-events-none absolute left-3 top-3 rounded-md border border-white/10 bg-black/40 px-2 py-1 font-mono text-[10px] text-muted-foreground backdrop-blur", children: [
+        "scale ",
+        view.scale.toFixed(0),
+        " px/u · center (",
+        view.cx.toFixed(2),
+        ",",
+        " ",
+        view.cy.toFixed(2),
+        ")"
+      ] })
+    ] }) }) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "order-2 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-5 md:order-1 md:w-[340px] md:flex-none md:px-0 md:pb-0", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs(Panel, { className: "bg-white/5 shadow-2xl backdrop-blur-xl", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsxs(PanelHeader, { children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Equations" }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-1", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => addEq("function"), className: "rounded px-2 py-0.5 text-[10px] hover:bg-white/10", children: "+ f(x)" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => addEq("polar"), className: "rounded px-2 py-0.5 text-[10px] hover:bg-white/10", children: "+ r(θ)" })
+            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => addEq("function"), className: "min-h-10 touch-manipulation rounded-lg px-3 text-xs hover:bg-white/10 md:min-h-0 md:px-2 md:py-0.5 md:text-[10px]", children: "+ f(x)" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => addEq("polar"), className: "min-h-10 touch-manipulation rounded-lg px-3 text-xs hover:bg-white/10 md:min-h-0 md:px-2 md:py-0.5 md:text-[10px]", children: "+ r(θ)" })
           ] })
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "space-y-2 p-3", children: eqs.map((e) => {
@@ -446,13 +461,13 @@ function GraphLab() {
               /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: (ev) => {
                 ev.stopPropagation();
                 removeEq(e.id);
-              }, className: "text-muted-foreground hover:text-foreground", children: "×" })
+              }, className: "min-h-10 min-w-10 touch-manipulation rounded-lg text-muted-foreground hover:bg-white/10 hover:text-foreground md:min-h-0 md:min-w-0 md:bg-transparent md:hover:bg-transparent", children: "×" })
             ] }),
             err && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-1 font-mono text-[10px] text-rose-300", children: err })
           ] }, e.id);
         }) })
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs(Panel, { children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs(Panel, { className: "bg-white/5 shadow-2xl backdrop-blur-xl", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx(PanelHeader, { children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Parameters" }) }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3 p-3", children: [
           Object.entries(params).map(([k, v]) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
@@ -474,22 +489,7 @@ function GraphLab() {
           ] })
         ] })
       ] })
-    ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "order-1 flex min-h-[50vh] flex-col gap-4 lg:order-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx(Panel, { className: "relative", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { ref: wrapRef, className: "relative h-[52vh] min-h-[360px] touch-none cursor-grab select-none active:cursor-grabbing sm:h-[58vh] lg:h-[calc(100vh-220px)] lg:min-h-[500px]", style: {
-      touchAction: "none"
-    }, children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("canvas", { ref: canvasRef, className: "absolute inset-0" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "pointer-events-none absolute left-3 top-3 rounded-md border border-white/10 bg-black/40 px-2 py-1 font-mono text-[10px] text-muted-foreground backdrop-blur", children: [
-        "scale ",
-        view.scale.toFixed(0),
-        " px/u · center (",
-        view.cx.toFixed(2),
-        ",",
-        " ",
-        view.cy.toFixed(2),
-        ")"
-      ] })
-    ] }) }) })
+    ] })
   ] }) });
 }
 function MathExpressionInput({
