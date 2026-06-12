@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { motion } from "motion/react";
 import { useRef, useState } from "react";
 
 export const Route = createFileRoute("/")({
@@ -150,12 +149,7 @@ function LogoMark() {
 function Hero() {
   return (
     <section className="relative z-10 mx-auto max-w-7xl px-5 pb-10 pt-16 sm:px-6 md:pb-14 md:pt-24">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className="mx-auto max-w-4xl text-center"
-      >
+      <div className="mx-auto max-w-4xl text-center">
         <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.2em] text-white/50 shadow-2xl backdrop-blur-2xl">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-300" />
           v0.1 - public preview
@@ -181,7 +175,7 @@ function Hero() {
             Apri Graph Lab -&gt;
           </Link>
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 }
@@ -206,17 +200,12 @@ function ModuleCard({
   badgeClass,
   soon,
   to,
-  index,
 }: (typeof modules)[number] & { index: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ x: -200, y: -200 });
   const inner = (
-    <motion.div
+    <div
       ref={ref}
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.5, delay: index * 0.05 }}
       onMouseMove={(event) => {
         const rect = ref.current?.getBoundingClientRect();
         if (rect) setPos({ x: event.clientX - rect.left, y: event.clientY - rect.top });
@@ -252,7 +241,7 @@ function ModuleCard({
         {soon ? "Coming soon" : "Apri modulo"}{" "}
         <span className="transition group-hover:translate-x-1">-&gt;</span>
       </div>
-    </motion.div>
+    </div>
   );
 
   if (soon) return <div>{inner}</div>;

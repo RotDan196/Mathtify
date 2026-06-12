@@ -1,6 +1,5 @@
 import { j as jsxRuntimeExports, r as reactExports } from "../_libs/react.mjs";
 import { L as Link } from "../_libs/tanstack__react-router.mjs";
-import { m as motion } from "../_libs/framer-motion.mjs";
 import "../_libs/tanstack__router-core.mjs";
 import "../_libs/tanstack__history.mjs";
 import "../_libs/cookie-es.mjs";
@@ -14,8 +13,6 @@ import "crypto";
 import "async_hooks";
 import "stream";
 import "../_libs/isbot.mjs";
-import "../_libs/motion-dom.mjs";
-import "../_libs/motion-utils.mjs";
 const modules = [{
   tag: "GRAPH LAB",
   title: "Plot the impossible",
@@ -106,16 +103,7 @@ function LogoMark() {
   ] });
 }
 function Hero() {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("section", { className: "relative z-10 mx-auto max-w-7xl px-5 pb-10 pt-16 sm:px-6 md:pb-14 md:pt-24", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(motion.div, { initial: {
-    opacity: 0,
-    y: 20
-  }, animate: {
-    opacity: 1,
-    y: 0
-  }, transition: {
-    duration: 0.8,
-    ease: "easeOut"
-  }, className: "mx-auto max-w-4xl text-center", children: [
+  return /* @__PURE__ */ jsxRuntimeExports.jsx("section", { className: "relative z-10 mx-auto max-w-7xl px-5 pb-10 pt-16 sm:px-6 md:pb-14 md:pt-24", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mx-auto max-w-4xl text-center", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mb-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.2em] text-white/50 shadow-2xl backdrop-blur-2xl", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-300" }),
       "v0.1 - public preview"
@@ -142,27 +130,14 @@ function ModuleCard({
   accent,
   badgeClass,
   soon,
-  to,
-  index
+  to
 }) {
   const ref = reactExports.useRef(null);
   const [pos, setPos] = reactExports.useState({
     x: -200,
     y: -200
   });
-  const inner = /* @__PURE__ */ jsxRuntimeExports.jsxs(motion.div, { ref, initial: {
-    opacity: 0,
-    y: 20
-  }, whileInView: {
-    opacity: 1,
-    y: 0
-  }, viewport: {
-    once: true,
-    margin: "-80px"
-  }, transition: {
-    duration: 0.5,
-    delay: index * 0.05
-  }, onMouseMove: (event) => {
+  const inner = /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { ref, onMouseMove: (event) => {
     const rect = ref.current?.getBoundingClientRect();
     if (rect) setPos({
       x: event.clientX - rect.left,

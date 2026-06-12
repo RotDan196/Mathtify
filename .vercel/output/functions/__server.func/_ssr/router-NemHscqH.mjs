@@ -216,7 +216,7 @@ const Route$2 = createFileRoute("/audio")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$1, "component")
 });
-const $$splitComponentImporter = () => import("./index-2Cnp1Awl.mjs");
+const $$splitComponentImporter = () => import("./index-DgnAFx6t.mjs");
 const Route$1 = createFileRoute("/")({
   head: () => ({
     meta: [{
