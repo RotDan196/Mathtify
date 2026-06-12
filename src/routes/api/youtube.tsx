@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import youtubedl from "youtube-dl-exec";
+import type { Flags } from "youtube-dl-exec";
 
 const QUALITY_OPTIONS = ["360", "720", "1080"];
 const AUDIO_FORMAT_OPTIONS = ["mp3", "m4a", "opus", "wav", "flac"];
@@ -26,6 +27,22 @@ type YoutubeDlResult = {
   error?: string;
   requested_formats?: Array<{ mime_type?: string }>;
 };
+
+const require = createRequire(import.meta.url);
+
+async function getYoutubeDl() {
+  const mod = await import("youtube-dl-exec");
+  return mod.default;
+}
+
+function getFfmpegPath() {
+  try {
+    const ffmpegPath = require("ffmpeg-static");
+    return typeof ffmpegPath === "string" && ffmpegPath ? ffmpegPath : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -77,8 +94,9 @@ function normalizeAudioQuality(quality: unknown) {
 }
 
 async function getYouTubeUrl(inputUrl: string, quality = "720") {
+  const youtubedl = await getYoutubeDl();
   const format = `best[height<=${quality}][ext=mp4]/best[height<=${quality}]/best[ext=mp4]/best`;
-  return await youtubedl(
+  return (await youtubedl(
     inputUrl,
     {
       dumpSingleJson: true,
@@ -88,7 +106,7 @@ async function getYouTubeUrl(inputUrl: string, quality = "720") {
       addHeader: ["referer:youtube.com", "user-agent:Mozilla/5.0"],
     },
     { timeout: 120000 },
-  );
+  )) as YoutubeDlResult;
 }
 
 async function extractYouTubeAudio({
@@ -106,21 +124,26 @@ async function extractYouTubeAudio({
   const output = join(dir, `${videoId}.%(ext)s`);
 
   try {
-    const ytdlpOptions = {
+    const youtubedl = await getYoutubeDl();
+    const ffmpegPath = getFfmpegPath();
+    if (!ffmpegPath) throw new Error("ffmpeg_static_not_available");
+
+    const ytdlpOptions: Flags = {
       noPlaylist: true,
       noWarnings: true,
       extractAudio: true,
       audioFormat,
-      audioQuality: `${audioQuality}K`,
+      audioQuality: Number(audioQuality),
       format: "bestaudio/best",
       output,
+      ffmpegLocation: ffmpegPath,
       addHeader: ["referer:youtube.com", "user-agent:Mozilla/5.0"],
-    } as any;
+    };
 
     await youtubedl(inputUrl, ytdlpOptions, { timeout: 240000 });
 
     const files = await readdir(dir);
-    const fileName = files.find((file) => file.startsWith(videoId));
+    const fileName = files.find((file: string) => file.startsWith(videoId));
     if (!fileName) throw new Error("audio_file_not_created");
 
     const buffer = await readFile(join(dir, fileName));
@@ -139,7 +162,7 @@ async function extractYouTubeAudio({
 export const Route = createFileRoute("/api/youtube")({
   server: {
     handlers: {
-      POST: async ({ request }) => {
+      POST: async ({ request }: { request: Request }) => {
         try {
           const payload = await request.json().catch(() => null);
           const inputUrl = typeof payload?.url === "string" ? payload.url.trim() : "";
@@ -176,7 +199,7 @@ export const Route = createFileRoute("/api/youtube")({
             });
           }
 
-          const data = (await getYouTubeUrl(inputUrl, quality)) as YoutubeDlResult;
+          const data = await getYouTubeUrl(inputUrl, quality);
 
           if (typeof data?.url !== "string") {
             return jsonResponse(

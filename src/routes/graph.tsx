@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import "mathlive";
 import type { MathfieldElement } from "mathlive";
 import { parse, type MathNode } from "mathjs";
@@ -525,7 +525,7 @@ function MathExpressionInput({
 
   return (
     <math-field
-      ref={(field) => {
+      ref={(field: MathfieldElement | null) => {
         localRef.current = field;
         if (field) {
           field.mathVirtualKeyboardPolicy = "auto";
@@ -554,7 +554,9 @@ function MathExpressionInput({
           window.mathVirtualKeyboard?.show({ animate: true });
         }
       }}
-      onInput={(event) => onChange(event.currentTarget.getValue("ascii-math"))}
+      onInput={(event: FormEvent<MathfieldElement>) =>
+        onChange(event.currentTarget.getValue("ascii-math"))
+      }
     />
   );
 }

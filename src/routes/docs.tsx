@@ -213,7 +213,7 @@ function DocViewer() {
     setEditMode(false);
     try {
       if (/\.pdf$/i.test(file.name)) {
-        const pdfjs = (await import("pdfjs-dist")) as PdfJsModule;
+        const pdfjs = (await import("pdfjs-dist")) as unknown as PdfJsModule;
         // worker via cdn for v6
         const workerUrl = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
         pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
@@ -221,7 +221,7 @@ function DocViewer() {
         const doc = await pdfjs.getDocument({ data: buf }).promise;
         setLoaded({ kind: "pdf", name: file.name, pages: doc.numPages, doc });
       } else if (/\.docx$/i.test(file.name)) {
-        const mammoth = (await import("mammoth/mammoth.browser")) as MammothModule;
+        const mammoth = (await import("mammoth/mammoth.browser")) as unknown as MammothModule;
         const buf = await file.arrayBuffer();
         const res = await mammoth.convertToHtml({ arrayBuffer: buf });
         setLoaded({ kind: "docx", name: file.name, html: res.value });

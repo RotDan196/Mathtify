@@ -1,21 +1,20 @@
-import type { DetailedHTMLProps, HTMLAttributes } from "react";
-import type { MathfieldElement } from "mathlive";
+declare module "@/components/AudioTools" {
+  import type { ComponentType } from "react";
 
-declare module "mammoth/mammoth.browser";
+  const AudioTools: ComponentType;
+  export default AudioTools;
+}
 
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      "math-field": DetailedHTMLProps<HTMLAttributes<MathfieldElement>, MathfieldElement> & {
-        "default-mode"?: "math" | "text" | "inline-math";
-        "letter-shape-style"?: "auto" | "tex" | "iso" | "french" | "upright";
-        "math-virtual-keyboard-policy"?: "auto" | "manual" | "sandboxed";
-        placeholder?: string;
-        "remove-extraneous-parentheses"?: string;
-        "smart-fence"?: string;
-        "smart-mode"?: string;
-        "smart-superscript"?: string;
-      };
-    }
-  }
+declare module "@/components/YoutubeDownloader" {
+  import type { ComponentType } from "react";
+
+  const YoutubeDownloader: ComponentType<{ onAudioReady?: (url: string) => void }>;
+  export default YoutubeDownloader;
+}
+
+declare module "mammoth/mammoth.browser" {
+  const mammoth: {
+    convertToHtml: (options: { arrayBuffer: ArrayBuffer }) => Promise<{ value: string }>;
+  };
+  export default mammoth;
 }
