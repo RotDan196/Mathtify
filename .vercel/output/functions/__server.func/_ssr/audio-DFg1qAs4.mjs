@@ -35,19 +35,16 @@ function formatTime(seconds) {
   const secs = Math.floor(seconds % 60).toString().padStart(2, "0");
   return `${mins}:${secs}`;
 }
-function fitCanvas(canvas) {
-  const rect = canvas.getBoundingClientRect();
-  const width = Math.max(320, Math.floor(rect.width || canvas.parentElement?.clientWidth || 720));
-  const height = Math.max(
-    120,
-    Math.floor(rect.height || canvas.parentElement?.clientHeight || 180)
-  );
+function fitCanvas(canvas, container = canvas.parentElement) {
+  const rect = container?.getBoundingClientRect();
+  const width = Math.max(1, Math.floor(rect?.width || container?.clientWidth || 1));
+  const height = Math.max(1, Math.floor(rect?.height || container?.clientHeight || 1));
   const dpr = window.devicePixelRatio || 1;
   if (canvas.width !== Math.floor(width * dpr) || canvas.height !== Math.floor(height * dpr)) {
     canvas.width = Math.floor(width * dpr);
     canvas.height = Math.floor(height * dpr);
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
   }
   const ctx = canvas.getContext("2d");
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -294,6 +291,7 @@ function AudioTools() {
   const highEqRef = reactExports.useRef(null);
   const analyserRef = reactExports.useRef(null);
   const animationRef = reactExports.useRef(0);
+  const spectrumContainerRef = reactExports.useRef(null);
   const spectrumCanvasRef = reactExports.useRef(null);
   const waveformContainerRef = reactExports.useRef(null);
   const waveSurferRef = reactExports.useRef(null);
@@ -409,8 +407,9 @@ function AudioTools() {
   }, []);
   const drawIdleSpectrum = reactExports.useCallback(() => {
     const canvas = spectrumCanvasRef.current;
+    const container = spectrumContainerRef.current;
     if (!canvas) return;
-    const { ctx, width, height } = fitCanvas(canvas);
+    const { ctx, width, height } = fitCanvas(canvas, container);
     ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = "rgba(255,255,255,0.025)";
     ctx.fillRect(0, 0, width, height);
@@ -422,16 +421,17 @@ function AudioTools() {
   }, []);
   const drawSpectrum = reactExports.useCallback(() => {
     const canvas = spectrumCanvasRef.current;
+    const container = spectrumContainerRef.current;
     const analyser = analyserRef.current;
     if (!canvas || !analyser) return;
-    const { ctx, width, height } = fitCanvas(canvas);
     const data = new Uint8Array(analyser.frequencyBinCount);
-    const gradient = ctx.createLinearGradient(0, height, 0, 0);
-    gradient.addColorStop(0, "#22d3ee");
-    gradient.addColorStop(0.35, "#1DB954");
-    gradient.addColorStop(0.66, "#facc15");
-    gradient.addColorStop(1, "#ff1744");
     const render = () => {
+      const { ctx, width, height } = fitCanvas(canvas, container);
+      const gradient = ctx.createLinearGradient(0, height, 0, 0);
+      gradient.addColorStop(0, "#22d3ee");
+      gradient.addColorStop(0.35, "#1DB954");
+      gradient.addColorStop(0.66, "#facc15");
+      gradient.addColorStop(1, "#ff1744");
       analyser.getByteFrequencyData(data);
       ctx.clearRect(0, 0, width, height);
       ctx.fillStyle = "rgba(0,0,0,0.18)";
@@ -477,11 +477,24 @@ function AudioTools() {
     if (!isPlaying) drawIdleSpectrum();
   }, [drawIdleSpectrum, isPlaying]);
   reactExports.useEffect(() => {
-    const onResize = () => {
-      if (!isPlaying) drawIdleSpectrum();
+    const container = spectrumContainerRef.current;
+    const canvas = spectrumCanvasRef.current;
+    if (!container || !canvas) return void 0;
+    let frame = 0;
+    const resizeCanvas = () => {
+      if (frame) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        fitCanvas(canvas, container);
+        if (!isPlaying) drawIdleSpectrum();
+      });
     };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    resizeCanvas();
+    const observer = new ResizeObserver(resizeCanvas);
+    observer.observe(container);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
   }, [drawIdleSpectrum, isPlaying]);
   reactExports.useEffect(() => {
     if (gainRef.current && audioContextRef.current) {
@@ -810,7 +823,7 @@ function AudioTools() {
             ] }),
             /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "FFT 2048" })
           ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("canvas", { ref: spectrumCanvasRef, className: "h-44 w-full rounded-lg" })
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { ref: spectrumContainerRef, className: "relative h-32 w-full sm:h-44", children: /* @__PURE__ */ jsxRuntimeExports.jsx("canvas", { ref: spectrumCanvasRef, className: "absolute inset-0 h-full w-full rounded-lg" }) })
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded-xl border border-white/10 bg-black/20 p-3", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mb-2 flex items-center justify-between text-xs text-muted-foreground", children: [

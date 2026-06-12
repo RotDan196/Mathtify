@@ -41,20 +41,17 @@ function formatTime(seconds) {
   return `${mins}:${secs}`;
 }
 
-function fitCanvas(canvas) {
-  const rect = canvas.getBoundingClientRect();
-  const width = Math.max(320, Math.floor(rect.width || canvas.parentElement?.clientWidth || 720));
-  const height = Math.max(
-    120,
-    Math.floor(rect.height || canvas.parentElement?.clientHeight || 180),
-  );
+function fitCanvas(canvas, container = canvas.parentElement) {
+  const rect = container?.getBoundingClientRect();
+  const width = Math.max(1, Math.floor(rect?.width || container?.clientWidth || 1));
+  const height = Math.max(1, Math.floor(rect?.height || container?.clientHeight || 1));
   const dpr = window.devicePixelRatio || 1;
 
   if (canvas.width !== Math.floor(width * dpr) || canvas.height !== Math.floor(height * dpr)) {
     canvas.width = Math.floor(width * dpr);
     canvas.height = Math.floor(height * dpr);
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
   }
 
   const ctx = canvas.getContext("2d");
@@ -343,6 +340,7 @@ export default function AudioTools() {
   const highEqRef = useRef(null);
   const analyserRef = useRef(null);
   const animationRef = useRef(0);
+  const spectrumContainerRef = useRef(null);
   const spectrumCanvasRef = useRef(null);
   const waveformContainerRef = useRef(null);
   const waveSurferRef = useRef(null);
@@ -487,9 +485,10 @@ export default function AudioTools() {
 
   const drawIdleSpectrum = useCallback(() => {
     const canvas = spectrumCanvasRef.current;
+    const container = spectrumContainerRef.current;
     if (!canvas) return;
 
-    const { ctx, width, height } = fitCanvas(canvas);
+    const { ctx, width, height } = fitCanvas(canvas, container);
     ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = "rgba(255,255,255,0.025)";
     ctx.fillRect(0, 0, width, height);
@@ -502,18 +501,20 @@ export default function AudioTools() {
 
   const drawSpectrum = useCallback(() => {
     const canvas = spectrumCanvasRef.current;
+    const container = spectrumContainerRef.current;
     const analyser = analyserRef.current;
     if (!canvas || !analyser) return;
 
-    const { ctx, width, height } = fitCanvas(canvas);
     const data = new Uint8Array(analyser.frequencyBinCount);
-    const gradient = ctx.createLinearGradient(0, height, 0, 0);
-    gradient.addColorStop(0, "#22d3ee");
-    gradient.addColorStop(0.35, "#1DB954");
-    gradient.addColorStop(0.66, "#facc15");
-    gradient.addColorStop(1, "#ff1744");
 
     const render = () => {
+      const { ctx, width, height } = fitCanvas(canvas, container);
+      const gradient = ctx.createLinearGradient(0, height, 0, 0);
+      gradient.addColorStop(0, "#22d3ee");
+      gradient.addColorStop(0.35, "#1DB954");
+      gradient.addColorStop(0.66, "#facc15");
+      gradient.addColorStop(1, "#ff1744");
+
       analyser.getByteFrequencyData(data);
       ctx.clearRect(0, 0, width, height);
       ctx.fillStyle = "rgba(0,0,0,0.18)";
@@ -572,12 +573,27 @@ export default function AudioTools() {
   }, [drawIdleSpectrum, isPlaying]);
 
   useEffect(() => {
-    const onResize = () => {
-      if (!isPlaying) drawIdleSpectrum();
+    const container = spectrumContainerRef.current;
+    const canvas = spectrumCanvasRef.current;
+    if (!container || !canvas) return undefined;
+
+    let frame = 0;
+    const resizeCanvas = () => {
+      if (frame) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        fitCanvas(canvas, container);
+        if (!isPlaying) drawIdleSpectrum();
+      });
     };
 
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    resizeCanvas();
+    const observer = new ResizeObserver(resizeCanvas);
+    observer.observe(container);
+
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
   }, [drawIdleSpectrum, isPlaying]);
 
   useEffect(() => {
@@ -955,7 +971,9 @@ export default function AudioTools() {
                 </span>
                 <span>FFT 2048</span>
               </div>
-              <canvas ref={spectrumCanvasRef} className="h-44 w-full rounded-lg" />
+              <div ref={spectrumContainerRef} className="relative h-32 w-full sm:h-44">
+                <canvas ref={spectrumCanvasRef} className="absolute inset-0 h-full w-full rounded-lg" />
+              </div>
             </div>
 
             <div className="rounded-xl border border-white/10 bg-black/20 p-3">

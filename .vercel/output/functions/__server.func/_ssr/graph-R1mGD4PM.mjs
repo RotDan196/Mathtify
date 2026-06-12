@@ -55,24 +55,80 @@ function GraphLab() {
   });
   const canvasRef = reactExports.useRef(null);
   const wrapRef = reactExports.useRef(null);
+  const viewRef = reactExports.useRef(view);
+  reactExports.useEffect(() => {
+    viewRef.current = view;
+  }, [view]);
   reactExports.useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
+    const pointers = /* @__PURE__ */ new Map();
     let dragging = false;
     let last = {
       x: 0,
       y: 0
     };
+    let pinch = null;
+    const getPoint = (e) => {
+      const rect = el.getBoundingClientRect();
+      return {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      };
+    };
+    const getPinch = () => {
+      const [a, b] = Array.from(pointers.values());
+      if (!a || !b) return null;
+      return {
+        distance: Math.hypot(b.x - a.x, b.y - a.y),
+        center: {
+          x: (a.x + b.x) / 2,
+          y: (a.y + b.y) / 2
+        }
+      };
+    };
     const onDown = (e) => {
+      e.preventDefault();
+      pointers.set(e.pointerId, getPoint(e));
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+      if (pointers.size >= 2) {
+        const nextPinch = getPinch();
+        if (!nextPinch) return;
+        dragging = false;
+        pinch = {
+          ...nextPinch,
+          view: viewRef.current
+        };
+        return;
+      }
       dragging = true;
       last = {
         x: e.clientX,
         y: e.clientY
       };
-      e.target.setPointerCapture?.(e.pointerId);
     };
     const onMove = (e) => {
+      if (pointers.has(e.pointerId)) pointers.set(e.pointerId, getPoint(e));
+      if (pointers.size >= 2 && pinch) {
+        e.preventDefault();
+        const current = getPinch();
+        const rect = el.getBoundingClientRect();
+        if (!current || pinch.distance <= 0) return;
+        const factor = current.distance / pinch.distance;
+        const newScale = Math.min(400, Math.max(8, pinch.view.scale * factor));
+        const wx = (pinch.center.x - rect.width / 2) / pinch.view.scale + pinch.view.cx;
+        const wy = -(pinch.center.y - rect.height / 2) / pinch.view.scale + pinch.view.cy;
+        const ncx = wx - (current.center.x - rect.width / 2) / newScale;
+        const ncy = wy + (current.center.y - rect.height / 2) / newScale;
+        setView({
+          cx: ncx,
+          cy: ncy,
+          scale: newScale
+        });
+        return;
+      }
       if (!dragging) return;
+      e.preventDefault();
       const dx = e.clientX - last.x, dy = e.clientY - last.y;
       last = {
         x: e.clientX,
@@ -84,7 +140,19 @@ function GraphLab() {
         cy: v.cy + dy / v.scale
       }));
     };
-    const onUp = () => {
+    const onUp = (e) => {
+      pointers.delete(e.pointerId);
+      pinch = null;
+      if (pointers.size === 1) {
+        const [remaining] = Array.from(pointers.values());
+        const rect = el.getBoundingClientRect();
+        dragging = true;
+        last = {
+          x: remaining.x + rect.left,
+          y: remaining.y + rect.top
+        };
+        return;
+      }
       dragging = false;
     };
     const onWheel = (e) => {
@@ -105,17 +173,26 @@ function GraphLab() {
         };
       });
     };
+    const preventTouchScroll = (e) => {
+      if (e.cancelable) e.preventDefault();
+    };
     el.addEventListener("pointerdown", onDown);
     el.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
     el.addEventListener("wheel", onWheel, {
+      passive: false
+    });
+    el.addEventListener("touchmove", preventTouchScroll, {
       passive: false
     });
     return () => {
       el.removeEventListener("pointerdown", onDown);
       el.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
       el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("touchmove", preventTouchScroll);
     };
   }, []);
   const compiled = reactExports.useMemo(() => {
@@ -322,14 +399,14 @@ function GraphLab() {
     /* @__PURE__ */ jsxRuntimeExports.jsx(IconButton, { onClick: () => setView((v) => ({
       ...v,
       scale: Math.min(400, v.scale * 1.2)
-    })), title: "Zoom in", children: "+" }),
+    })), title: "Zoom in", className: "min-h-[44px] min-w-[44px] touch-manipulation p-3 md:min-h-9 md:min-w-9 md:p-0 md:px-2", children: "+" }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(IconButton, { onClick: () => setView((v) => ({
       ...v,
       scale: Math.max(8, v.scale / 1.2)
-    })), title: "Zoom out", children: "−" }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(IconButton, { onClick: resetView, title: "Reset view", children: "⌖" })
-  ] }), children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid grid-cols-1 gap-4 lg:grid-cols-[340px_1fr]", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col gap-4", children: [
+    })), title: "Zoom out", className: "min-h-[44px] min-w-[44px] touch-manipulation p-3 md:min-h-9 md:min-w-9 md:p-0 md:px-2", children: "−" }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(IconButton, { onClick: resetView, title: "Reset view", className: "min-h-[44px] min-w-[44px] touch-manipulation p-3 md:min-h-9 md:min-w-9 md:p-0 md:px-2", children: "⌖" })
+  ] }), children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid grid-cols-1 gap-4 lg:grid-cols-[340px_minmax(0,1fr)]", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "order-2 flex max-h-[45vh] flex-col gap-4 overflow-y-auto pr-1 lg:order-1 lg:max-h-none lg:overflow-visible lg:pr-0", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs(Panel, { children: [
         /* @__PURE__ */ jsxRuntimeExports.jsxs(PanelHeader, { children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Equations" }),
@@ -398,7 +475,9 @@ function GraphLab() {
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col gap-4", children: /* @__PURE__ */ jsxRuntimeExports.jsx(Panel, { className: "relative", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { ref: wrapRef, className: "relative h-[calc(100vh-220px)] min-h-[500px] cursor-grab active:cursor-grabbing select-none", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "order-1 flex min-h-[50vh] flex-col gap-4 lg:order-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx(Panel, { className: "relative", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { ref: wrapRef, className: "relative h-[52vh] min-h-[360px] touch-none cursor-grab select-none active:cursor-grabbing sm:h-[58vh] lg:h-[calc(100vh-220px)] lg:min-h-[500px]", style: {
+      touchAction: "none"
+    }, children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("canvas", { ref: canvasRef, className: "absolute inset-0" }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "pointer-events-none absolute left-3 top-3 rounded-md border border-white/10 bg-black/40 px-2 py-1 font-mono text-[10px] text-muted-foreground backdrop-blur", children: [
         "scale ",

@@ -19,7 +19,7 @@ import "crypto";
 import "async_hooks";
 import "stream";
 import "../_libs/isbot.mjs";
-const appCss = "/assets/styles-DC66JRNv.css";
+const appCss = "/assets/styles-D0kJ1OWC.css";
 function reportLovableError(error, context = {}) {
   if (typeof window === "undefined") return;
   window.__lovableEvents?.captureException?.(
@@ -156,7 +156,7 @@ const Route$7 = createFileRoute("/whiteboard")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$6, "component")
 });
-const $$splitComponentImporter$5 = () => import("./graph-DSeAmp8s.mjs");
+const $$splitComponentImporter$5 = () => import("./graph-R1mGD4PM.mjs");
 const Route$6 = createFileRoute("/graph")({
   head: () => ({
     meta: [{
@@ -204,7 +204,7 @@ const Route$3 = createFileRoute("/code")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$2, "component")
 });
-const $$splitComponentImporter$1 = () => import("./audio-B6KnHkKP.mjs");
+const $$splitComponentImporter$1 = () => import("./audio-DFg1qAs4.mjs");
 const Route$2 = createFileRoute("/audio")({
   head: () => ({
     meta: [{
