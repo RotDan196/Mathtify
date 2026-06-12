@@ -102,30 +102,22 @@ async function extractYouTubeAudio({
   audioFormat: string;
   audioQuality: string;
 }) {
-  const ffmpegPath = (await import("ffmpeg-static")).default;
-  if (!ffmpegPath) {
-    throw new Error("ffmpeg_not_available");
-  }
-
   const dir = await mkdtemp(join(tmpdir(), "mathtify-youtube-"));
   const output = join(dir, `${videoId}.%(ext)s`);
 
   try {
-    await youtubedl(
-      inputUrl,
-      {
-        noPlaylist: true,
-        noWarnings: true,
-        extractAudio: true,
-        audioFormat,
-        audioQuality: `${audioQuality}K`,
-        format: "bestaudio/best",
-        output,
-        ffmpegLocation: ffmpegPath,
-        addHeader: ["referer:youtube.com", "user-agent:Mozilla/5.0"],
-      },
-      { timeout: 240000 },
-    );
+    const ytdlpOptions = {
+      noPlaylist: true,
+      noWarnings: true,
+      extractAudio: true,
+      audioFormat,
+      audioQuality: `${audioQuality}K`,
+      format: "bestaudio/best",
+      output,
+      addHeader: ["referer:youtube.com", "user-agent:Mozilla/5.0"],
+    } as any;
+
+    await youtubedl(inputUrl, ytdlpOptions, { timeout: 240000 });
 
     const files = await readdir(dir);
     const fileName = files.find((file) => file.startsWith(videoId));
