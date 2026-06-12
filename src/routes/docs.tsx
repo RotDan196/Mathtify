@@ -1,6 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Edit3,
+  Eraser,
+  Highlighter,
+  MousePointer2,
+  PenLine,
+  Type,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 import { IconButton, ModuleShell, Panel, PanelHeader } from "@/components/ModuleShell";
 
 export const Route = createFileRoute("/docs")({
@@ -45,6 +63,28 @@ type PdfTextItem = {
   str?: string;
 };
 
+type AnnotationTool = "pen" | "highlight" | "text";
+
+type AnnotationPoint = {
+  x: number;
+  y: number;
+};
+
+type Annotation =
+  | {
+      color: string;
+      points: AnnotationPoint[];
+      tool: "pen" | "highlight";
+      width: number;
+    }
+  | {
+      color: string;
+      text: string;
+      tool: "text";
+      x: number;
+      y: number;
+    };
+
 type PdfJsModule = {
   version: string;
   GlobalWorkerOptions: {
@@ -66,8 +106,101 @@ function DocViewer() {
   const [matchIdx, setMatchIdx] = useState(0);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [annotationTool, setAnnotationTool] = useState<AnnotationTool>("pen");
+  const [penColor, setPenColor] = useState("#ef4444");
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const annotationCanvasRef = useRef<HTMLCanvasElement>(null);
+  const annotationsRef = useRef<Record<number, Annotation[]>>({});
+  const activeStrokeRef = useRef<Extract<Annotation, { tool: "pen" | "highlight" }> | null>(null);
   const docxRef = useRef<HTMLDivElement>(null);
+
+  const getAnnotationPoint = useCallback((event: ReactPointerEvent<HTMLCanvasElement>) => {
+    const canvas = annotationCanvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (event.clientX - rect.left) / rect.width,
+      y: (event.clientY - rect.top) / rect.height,
+    };
+  }, []);
+
+  const drawAnnotation = useCallback(
+    (ctx: CanvasRenderingContext2D, annotation: Annotation, width: number, height: number) => {
+      if (annotation.tool === "text") {
+        ctx.save();
+        ctx.font = `${Math.max(14, width * 0.022)}px Inter, system-ui, sans-serif`;
+        ctx.fillStyle = annotation.color;
+        ctx.shadowColor = "rgba(0,0,0,0.35)";
+        ctx.shadowBlur = 2;
+        ctx.fillText(annotation.text, annotation.x * width, annotation.y * height);
+        ctx.restore();
+        return;
+      }
+
+      if (annotation.points.length < 2) return;
+
+      ctx.save();
+      ctx.globalAlpha = annotation.tool === "highlight" ? 0.42 : 1;
+      ctx.globalCompositeOperation = annotation.tool === "highlight" ? "multiply" : "source-over";
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = annotation.width;
+      ctx.strokeStyle = annotation.color;
+      ctx.beginPath();
+      annotation.points.forEach((point, index) => {
+        const x = point.x * width;
+        const y = point.y * height;
+        if (index === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      ctx.restore();
+    },
+    [],
+  );
+
+  const redrawAnnotations = useCallback(() => {
+    const canvas = annotationCanvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const annotations = annotationsRef.current[page] || [];
+    annotations.forEach((annotation) =>
+      drawAnnotation(ctx, annotation, canvas.width, canvas.height),
+    );
+    if (activeStrokeRef.current) {
+      drawAnnotation(ctx, activeStrokeRef.current, canvas.width, canvas.height);
+    }
+  }, [drawAnnotation, page]);
+
+  const resizeAnnotationCanvas = useCallback(
+    (width: number, height: number) => {
+      const canvas = annotationCanvasRef.current;
+      if (!canvas) return;
+      canvas.width = width;
+      canvas.height = height;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      redrawAnnotations();
+    },
+    [redrawAnnotations],
+  );
+
+  const addAnnotation = useCallback(
+    (annotation: Annotation) => {
+      annotationsRef.current[page] = [...(annotationsRef.current[page] || []), annotation];
+      redrawAnnotations();
+    },
+    [page, redrawAnnotations],
+  );
+
+  const clearAnnotations = useCallback(() => {
+    annotationsRef.current[page] = [];
+    activeStrokeRef.current = null;
+    redrawAnnotations();
+  }, [page, redrawAnnotations]);
 
   const onFile = useCallback(async (file: File) => {
     setErr(null);
@@ -75,6 +208,9 @@ function DocViewer() {
     setPage(1);
     setQuery("");
     setMatches([]);
+    annotationsRef.current = {};
+    activeStrokeRef.current = null;
+    setEditMode(false);
     try {
       if (/\.pdf$/i.test(file.name)) {
         const pdfjs = (await import("pdfjs-dist")) as PdfJsModule;
@@ -115,11 +251,12 @@ function DocViewer() {
       canvas.style.width = viewport.width + "px";
       canvas.style.height = viewport.height + "px";
       await pg.render({ canvasContext: ctx, viewport, canvas }).promise;
+      if (!cancelled) resizeAnnotationCanvas(viewport.width, viewport.height);
     })();
     return () => {
       cancelled = true;
     };
-  }, [loaded, page, zoom]);
+  }, [loaded, page, resizeAnnotationCanvas, zoom]);
 
   // Search in PDF
   const runSearch = useCallback(async () => {
@@ -202,6 +339,53 @@ function DocViewer() {
       );
       (marks[ni] as HTMLElement)?.scrollIntoView({ block: "center" });
     }
+  };
+
+  const onAnnotationPointerDown = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (!editMode || loaded?.kind !== "pdf") return;
+    const point = getAnnotationPoint(event);
+    if (!point) return;
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+
+    if (annotationTool === "text") {
+      const text = window.prompt("Testo annotazione");
+      if (text?.trim()) {
+        addAnnotation({
+          color: penColor,
+          text: text.trim(),
+          tool: "text",
+          x: point.x,
+          y: point.y,
+        });
+      }
+      return;
+    }
+
+    activeStrokeRef.current = {
+      color: annotationTool === "highlight" ? "rgba(250, 204, 21, 0.95)" : penColor,
+      points: [point],
+      tool: annotationTool,
+      width: annotationTool === "highlight" ? 18 : 4,
+    };
+    redrawAnnotations();
+  };
+
+  const onAnnotationPointerMove = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (!activeStrokeRef.current || !editMode) return;
+    const point = getAnnotationPoint(event);
+    if (!point) return;
+    activeStrokeRef.current.points.push(point);
+    redrawAnnotations();
+  };
+
+  const onAnnotationPointerUp = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (!activeStrokeRef.current) return;
+    event.currentTarget.releasePointerCapture(event.pointerId);
+    const stroke = activeStrokeRef.current;
+    activeStrokeRef.current = null;
+    if (stroke.points.length > 1) addAnnotation(stroke);
+    else redrawAnnotations();
   };
 
   return (
@@ -344,6 +528,64 @@ function DocViewer() {
               >
                 <ZoomIn className="h-4 w-4" />
               </PdfToolbarButton>
+              {loaded.kind === "pdf" && (
+                <>
+                  <span className="mx-1 h-5 w-px bg-white/10" />
+                  <PdfToolbarButton
+                    label={editMode ? "Modalita lettura" : "Modalita modifica"}
+                    onClick={() => setEditMode((value) => !value)}
+                  >
+                    {editMode ? (
+                      <MousePointer2 className="h-4 w-4" />
+                    ) : (
+                      <Edit3 className="h-4 w-4" />
+                    )}
+                  </PdfToolbarButton>
+                </>
+              )}
+            </div>
+          )}
+
+          {loaded?.kind === "pdf" && editMode && (
+            <div className="absolute bottom-20 left-1/2 z-20 flex -translate-x-1/2 flex-wrap items-center justify-center gap-1 rounded-2xl border border-white/10 bg-card/85 p-2 shadow-2xl backdrop-blur-xl lg:bottom-auto lg:left-auto lg:right-4 lg:top-16 lg:translate-x-0">
+              <PdfToolButton
+                active={annotationTool === "pen"}
+                label="Disegna a mano libera"
+                onClick={() => setAnnotationTool("pen")}
+              >
+                <PenLine className="h-4 w-4" />
+              </PdfToolButton>
+              <PdfToolButton
+                active={annotationTool === "highlight"}
+                label="Evidenziatore"
+                onClick={() => setAnnotationTool("highlight")}
+              >
+                <Highlighter className="h-4 w-4" />
+              </PdfToolButton>
+              <PdfToolButton
+                active={annotationTool === "text"}
+                label="Aggiungi testo"
+                onClick={() => setAnnotationTool("text")}
+              >
+                <Type className="h-4 w-4" />
+              </PdfToolButton>
+              <span className="mx-1 hidden h-6 w-px bg-white/10 sm:block" />
+              {["#ef4444", "#3b82f6", "#111827"].map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  aria-label={`Colore ${color}`}
+                  onClick={() => setPenColor(color)}
+                  className={`h-8 w-8 rounded-full border transition hover:scale-105 ${
+                    penColor === color ? "border-white" : "border-white/20"
+                  }`}
+                  style={{ background: color }}
+                />
+              ))}
+              <span className="mx-1 hidden h-6 w-px bg-white/10 sm:block" />
+              <PdfToolButton label="Pulisci annotazioni" onClick={clearAnnotations}>
+                <Eraser className="h-4 w-4" />
+              </PdfToolButton>
             </div>
           )}
 
@@ -354,7 +596,19 @@ function DocViewer() {
               </div>
             )}
             {loaded?.kind === "pdf" && (
-              <canvas ref={canvasRef} className="max-w-none rounded-lg shadow-2xl" />
+              <div className="relative max-w-none rounded-lg shadow-2xl">
+                <canvas ref={canvasRef} className="max-w-none rounded-lg" />
+                <canvas
+                  ref={annotationCanvasRef}
+                  className={`absolute inset-0 max-w-none rounded-lg ${
+                    editMode ? "pointer-events-auto cursor-crosshair" : "pointer-events-none"
+                  }`}
+                  onPointerDown={onAnnotationPointerDown}
+                  onPointerMove={onAnnotationPointerMove}
+                  onPointerUp={onAnnotationPointerUp}
+                  onPointerCancel={onAnnotationPointerUp}
+                />
+              </div>
             )}
             {loaded?.kind === "docx" && (
               <div
@@ -389,6 +643,32 @@ function PdfToolbarButton({
       onClick={onClick}
       className="flex h-9 w-9 items-center justify-center rounded-full text-foreground transition hover:bg-white/10 disabled:pointer-events-none disabled:opacity-35"
       type="button"
+    >
+      {children}
+    </button>
+  );
+}
+
+function PdfToolButton({
+  active,
+  children,
+  label,
+  onClick,
+}: {
+  active?: boolean;
+  children: ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      aria-label={label}
+      onClick={onClick}
+      className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
+        active ? "bg-cyan-300 text-black" : "text-foreground hover:bg-white/10"
+      }`}
+      type="button"
+      title={label}
     >
       {children}
     </button>

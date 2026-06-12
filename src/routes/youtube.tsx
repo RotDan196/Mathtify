@@ -9,7 +9,7 @@ export const Route = createFileRoute("/youtube")({
       { title: "YouTube Downloader - RotVerse" },
       {
         name: "description",
-        content: "Interfaccia YouTube to MP3 pronta per backend audio.",
+        content: "Downloader YouTube con estrazione video tramite backend locale yt-dlp.",
       },
     ],
   }),
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/youtube")({
 
 function YoutubeRoute() {
   return (
-    <ModuleShell title="YouTube Downloader" tag="YOUTUBE MP3" accent="from-red-500 to-rose-500">
+    <ModuleShell title="YouTube Downloader" tag="YOUTUBE VIDEO" accent="from-red-500 to-rose-500">
       <YoutubeDownloader />
     </ModuleShell>
   );

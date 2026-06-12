@@ -28,14 +28,14 @@ type Eq = {
 };
 
 const COLORS = [
-  "#e879f9",
-  "#22d3ee",
-  "#34d399",
-  "#fbbf24",
-  "#fb7185",
-  "#a78bfa",
-  "#60a5fa",
-  "#f97316",
+  "#f43f5e",
+  "#3b82f6",
+  "#22c55e",
+  "#a855f7",
+  "#f59e0b",
+  "#06b6d4",
+  "#ec4899",
+  "#84cc16",
 ];
 
 function newId() {
@@ -48,6 +48,7 @@ function GraphLab() {
     { id: newId(), expr: "x^2 - 2", color: COLORS[1], visible: true, kind: "function" },
   ]);
   const [selected, setSelected] = useState<string>(eqs[0].id);
+  const [openColorPicker, setOpenColorPicker] = useState<string | null>(null);
   const [params, setParams] = useState<Record<string, number>>({ a: 1, k: 1 });
 
   const [view, setView] = useState({ cx: 0, cy: 0, scale: 60 }); // world->px
@@ -282,6 +283,11 @@ function GraphLab() {
     setEqs((arr) => arr.map((e) => (e.id === id ? { ...e, expr } : e)));
   };
 
+  const updateColor = (id: string, color: string) => {
+    setEqs((arr) => arr.map((e) => (e.id === id ? { ...e, color } : e)));
+    setOpenColorPicker(null);
+  };
+
   const addEq = (kind: Eq["kind"] = "function") => {
     const e: Eq = {
       id: newId(),
@@ -351,7 +357,10 @@ function GraphLab() {
                 return (
                   <div
                     key={e.id}
-                    onClick={() => setSelected(e.id)}
+                    onClick={() => {
+                      setSelected(e.id);
+                      setOpenColorPicker(null);
+                    }}
                     className={`rounded-lg border p-2 transition ${
                       selected === e.id
                         ? "border-primary/40 bg-primary/10"
@@ -359,16 +368,44 @@ function GraphLab() {
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={(ev) => {
-                          ev.stopPropagation();
-                          setEqs((a) =>
-                            a.map((x) => (x.id === e.id ? { ...x, visible: !x.visible } : x)),
-                          );
-                        }}
-                        className="h-3.5 w-3.5 shrink-0 rounded-full border border-white/20"
-                        style={{ background: e.visible ? e.color : "transparent" }}
-                      />
+                      <div className="relative shrink-0">
+                        <button
+                          type="button"
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            setSelected(e.id);
+                            setOpenColorPicker((current) => (current === e.id ? null : e.id));
+                          }}
+                          onDoubleClick={(ev) => {
+                            ev.stopPropagation();
+                            setEqs((a) =>
+                              a.map((x) => (x.id === e.id ? { ...x, visible: !x.visible } : x)),
+                            );
+                          }}
+                          aria-label="Change graph color"
+                          className="h-4 w-4 rounded-full border border-white/30 shadow-sm shadow-black/30 transition hover:scale-110 hover:border-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                          style={{ background: e.visible ? e.color : "transparent" }}
+                        />
+                        {openColorPicker === e.id && (
+                          <div
+                            onClick={(ev) => ev.stopPropagation()}
+                            className="absolute left-0 top-6 z-30 grid w-36 grid-cols-4 gap-2 rounded-lg border border-white/10 bg-background/95 p-2 shadow-2xl shadow-black/40 backdrop-blur-xl"
+                          >
+                            {COLORS.map((color) => (
+                              <button
+                                key={color}
+                                type="button"
+                                aria-label={`Use color ${color}`}
+                                onClick={() => updateColor(e.id, color)}
+                                className={`h-7 w-7 rounded-full border transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
+                                  e.color === color ? "border-white" : "border-white/20"
+                                }`}
+                                style={{ background: color }}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       <span className="font-mono text-[11px] text-muted-foreground">{prefix}</span>
                       <MathExpressionInput
                         value={e.expr}
@@ -490,7 +527,10 @@ function MathExpressionInput({
     <math-field
       ref={(field) => {
         localRef.current = field;
-        if (field) field.mathVirtualKeyboardPolicy = "auto";
+        if (field) {
+          field.mathVirtualKeyboardPolicy = "auto";
+          field.menuItems = [];
+        }
       }}
       default-mode="math"
       letter-shape-style="tex"
@@ -500,7 +540,7 @@ function MathExpressionInput({
       smart-fence="true"
       smart-mode="true"
       smart-superscript="true"
-      className="min-h-10 w-full min-w-0 flex-1 rounded-md border border-input bg-black/20 px-3 py-1.5 text-sm text-foreground shadow-sm transition-colors focus-within:outline-none focus-within:ring-1 focus-within:ring-ring"
+      className="min-h-10 w-full min-w-0 flex-1 rounded-md border border-input bg-black/20 px-3 py-1.5 text-sm text-foreground shadow-sm transition-colors focus-within:outline-none focus-within:ring-1 focus-within:ring-ring [&::part(menu-toggle)]:hidden"
       style={
         {
           "--caret-color": "var(--color-primary)",

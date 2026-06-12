@@ -12,6 +12,7 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@breezystack/lamejs": "^1.2.7",
     "@hookform/resolvers": "^5.2.2",
     "@monaco-editor/react": "^4.7.0",
     "@radix-ui/react-accordion": "^1.2.12",
@@ -50,8 +51,8 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
+    "ffmpeg-static": "^5.3.0",
     "input-otp": "^1.4.2",
-    "lamejs": "^1.2.1",
     "lucide-react": "^0.575.0",
     "mammoth": "^1.12.0",
     "mathjs": "^15.2.0",
@@ -72,6 +73,7 @@
     "vaul": "^1.1.2",
     "vite-tsconfig-paths": "^6.0.2",
     "wavesurfer.js": "^7.12.7",
+    "youtube-dl-exec": "^3.1.7",
     "zod": "^3.24.2"
   },
   "devDependencies": {

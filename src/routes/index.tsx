@@ -72,9 +72,9 @@ const modules = [
     soon: false,
   },
   {
-    tag: "YOUTUBE MP3",
+    tag: "YOUTUBE VIDEO",
     title: "YouTube Downloader",
-    desc: "Interfaccia YouTube to MP3 con selezione qualita, parsing simulato e download fittizio pronto per un backend dedicato.",
+    desc: "Downloader YouTube con selezione qualita e stream reale generato dal backend locale yt-dlp.",
     accent: "from-red-500 to-rose-500",
     badgeClass: "bg-red-500/20 text-red-300",
     to: "/youtube" as const,

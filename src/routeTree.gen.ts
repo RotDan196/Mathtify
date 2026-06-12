@@ -17,6 +17,7 @@ import { Route as DataRouteImport } from './routes/data'
 import { Route as CodeRouteImport } from './routes/code'
 import { Route as AudioRouteImport } from './routes/audio'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiYoutubeRouteImport } from './routes/api/youtube'
 
 const YoutubeRoute = YoutubeRouteImport.update({
   id: '/youtube',
@@ -58,6 +59,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiYoutubeRoute = ApiYoutubeRouteImport.update({
+  id: '/api/youtube',
+  path: '/api/youtube',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/graph': typeof GraphRoute
   '/whiteboard': typeof WhiteboardRoute
   '/youtube': typeof YoutubeRoute
+  '/api/youtube': typeof ApiYoutubeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/graph': typeof GraphRoute
   '/whiteboard': typeof WhiteboardRoute
   '/youtube': typeof YoutubeRoute
+  '/api/youtube': typeof ApiYoutubeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   '/graph': typeof GraphRoute
   '/whiteboard': typeof WhiteboardRoute
   '/youtube': typeof YoutubeRoute
+  '/api/youtube': typeof ApiYoutubeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
     | '/graph'
     | '/whiteboard'
     | '/youtube'
+    | '/api/youtube'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/graph'
     | '/whiteboard'
     | '/youtube'
+    | '/api/youtube'
   id:
     | '__root__'
     | '/'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/graph'
     | '/whiteboard'
     | '/youtube'
+    | '/api/youtube'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -132,6 +144,7 @@ export interface RootRouteChildren {
   GraphRoute: typeof GraphRoute
   WhiteboardRoute: typeof WhiteboardRoute
   YoutubeRoute: typeof YoutubeRoute
+  ApiYoutubeRoute: typeof ApiYoutubeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -192,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/youtube': {
+      id: '/api/youtube'
+      path: '/api/youtube'
+      fullPath: '/api/youtube'
+      preLoaderRoute: typeof ApiYoutubeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -204,6 +224,7 @@ const rootRouteChildren: RootRouteChildren = {
   GraphRoute: GraphRoute,
   WhiteboardRoute: WhiteboardRoute,
   YoutubeRoute: YoutubeRoute,
+  ApiYoutubeRoute: ApiYoutubeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
