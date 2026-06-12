@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import ffmpegPath from "ffmpeg-static";
 import youtubedl from "youtube-dl-exec";
 
 const QUALITY_OPTIONS = ["360", "720", "1080"];
@@ -103,6 +102,7 @@ async function extractYouTubeAudio({
   audioFormat: string;
   audioQuality: string;
 }) {
+  const ffmpegPath = (await import("ffmpeg-static")).default;
   if (!ffmpegPath) {
     throw new Error("ffmpeg_not_available");
   }
